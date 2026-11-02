@@ -107,7 +107,14 @@ final class AppModel: ObservableObject {
         router?.process(event)
     }
 
+    /// 設定画面を操作している間か
+    private var isSettingsWindowActive: Bool {
+        NSApp.isActive && NSApp.keyWindow?.identifier?.rawValue == "settings"
+    }
+
     private func post(_ action: KeyAction) {
+        // 設定画面を操作している間は送らない。解放は押しっぱなしを防ぐために常に送る
+        if action.isDown && isSettingsWindowActive { return }
         guard KeyInjector.isTrusted else {
             if action.isDown { log("アクセシビリティの権限がないためキーを送信しません") }
             return

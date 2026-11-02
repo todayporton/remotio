@@ -245,7 +245,8 @@ struct ButtonsPage: View {
     @State private var selected: String?
     @State private var recording: String?
     @State private var monitor: Any?
-    @State private var heldModifier: UInt16?
+    @State private var captureTap: KeyCaptureTap?
+    @State private var heldModifier: CGKeyCode?
     @State private var frames: [String: CGRect] = [:]
 
     var body: some View {
@@ -388,10 +389,10 @@ struct ButtonsPage: View {
                     Text(error).font(.callout).foregroundStyle(.red)
                 } else if let recording {
                     let name = RemoteButton.all.first { $0.id == recording }?.title ?? recording
-                    Text("「\(name)」に割り当てるキーを押してください。修飾キーだけ(Fn、右 ⌥ など)も押して離すと設定できます。")
+                    Text("「\(name)」に割り当てるキーを押してください。修飾キーだけ(Fn、右 ⌥ など)も押して離すと設定できます。待ち受け中のキー入力は他のアプリへ送りません。")
                         .font(.callout)
                 } else {
-                    Text("各ボタンのメニューから操作を選びます。「標準」は Mac の標準動作をそのまま通し、「無効」は何もしません。音声ボタンは、押している間マイクが動き、割り当てたキーも押され続けます。")
+                    Text("各ボタンのメニューから操作を選びます。「標準」は Mac の標準動作をそのまま通し、「無効」は何もしません。この画面を操作している間は、リモコンから割り当てたキーを送りません。")
                         .font(.callout).foregroundStyle(.secondary)
                 }
                 Spacer()
@@ -409,29 +410,35 @@ struct ButtonsPage: View {
         selected = id
         recording = id
         heldModifier = nil
+        // 他のアプリのショートカットより先に受け取る。権限がなければアプリ内だけで受け取る
+        let tap = KeyCaptureTap { type, keyCode, flags in
+            handleRecording(type, keyCode: keyCode, flags: flags)
+        }
+        if tap.start() {
+            captureTap = tap
+            return
+        }
         monitor = NSEvent.addLocalMonitorForEvents(matching: [.keyDown, .flagsChanged]) { event in
-            handleRecording(event)
+            handleRecording(event.type == .keyDown ? .keyDown : .flagsChanged,
+                            keyCode: event.keyCode,
+                            flags: CGEventFlags(rawValue: UInt64(event.modifierFlags.rawValue)))
             return nil
         }
     }
 
     private func stopRecording() {
+        captureTap?.stop()
+        captureTap = nil
         if let monitor { NSEvent.removeMonitor(monitor) }
         monitor = nil
         recording = nil
         heldModifier = nil
     }
 
-    private func handleRecording(_ event: NSEvent) {
+    private func handleRecording(_ type: CGEventType, keyCode: CGKeyCode, flags: CGEventFlags) {
         guard let id = recording else { return }
-        if event.type == .keyDown {
-            var flags: CGEventFlags = []
-            let modifiers = event.modifierFlags
-            if modifiers.contains(.command) { flags.insert(.maskCommand) }
-            if modifiers.contains(.shift) { flags.insert(.maskShift) }
-            if modifiers.contains(.option) { flags.insert(.maskAlternate) }
-            if modifiers.contains(.control) { flags.insert(.maskControl) }
-            guard let text = KeyCombo.recordedText(keyCode: event.keyCode, flags: flags) else {
+        if type == .keyDown {
+            guard let text = KeyCombo.recordedText(keyCode: keyCode, flags: flags) else {
                 model.keymapError = "このキーは割り当てできません"
                 return
             }
@@ -439,12 +446,14 @@ struct ButtonsPage: View {
             clearSelection()
             return
         }
+        guard type == .flagsChanged else { return }
         // 修飾キー: 他のキーと組み合わせずに離したときだけ単体として記録する
-        let isPress = KeyCombo.recordedModifierText(keyCode: event.keyCode) != nil
-            && event.modifierFlags.intersection([.command, .shift, .option, .control, .function]).isEmpty == false
+        let modifierMask: CGEventFlags = [.maskCommand, .maskShift, .maskAlternate, .maskControl, .maskSecondaryFn]
+        let isPress = KeyCombo.recordedModifierText(keyCode: keyCode) != nil
+            && !flags.intersection(modifierMask).isEmpty
         if isPress {
-            heldModifier = event.keyCode
-        } else if let held = heldModifier, held == event.keyCode,
+            heldModifier = keyCode
+        } else if let held = heldModifier, held == keyCode,
                   let text = KeyCombo.recordedModifierText(keyCode: held) {
             model.setBinding(id, to: text)
             clearSelection()
