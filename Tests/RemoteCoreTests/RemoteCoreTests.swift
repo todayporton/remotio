@@ -109,6 +109,8 @@ final class RemoteCoreTests: XCTestCase {
         XCTAssertEqual(KeyCombo.recordedText(keyCode: 36, flags: []), "return")
         XCTAssertEqual(KeyCombo.recordedText(keyCode: 35, flags: [.maskCommand, .maskShift]), "shift+cmd+p")
         XCTAssertEqual(KeyCombo.recordedModifierText(keyCode: 63), "fn")
+        XCTAssertEqual(KeyCombo.recordedMediaText(key: 2), "media:brightness_up")
+        XCTAssertNil(KeyCombo.recordedMediaText(key: 999))
         XCTAssertEqual(KeyCombo.displayText("cmd+shift+p"), "⌘⇧P")
         // 記録した文字列はそのまま読み込める
         XCTAssertEqual(try KeyCombo("shift+cmd+p").keyCode, 35)

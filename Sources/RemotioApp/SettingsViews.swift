@@ -411,9 +411,11 @@ struct ButtonsPage: View {
         recording = id
         heldModifier = nil
         // 他のアプリのショートカットより先に受け取る。権限がなければアプリ内だけで受け取る
-        let tap = KeyCaptureTap { type, keyCode, flags in
+        let tap = KeyCaptureTap(handler: { type, keyCode, flags in
             handleRecording(type, keyCode: keyCode, flags: flags)
-        }
+        }, systemKeyHandler: { key, flags in
+            handleRecordingSystemKey(key, flags: flags)
+        })
         if tap.start() {
             captureTap = tap
             return
@@ -433,6 +435,19 @@ struct ButtonsPage: View {
         monitor = nil
         recording = nil
         heldModifier = nil
+    }
+
+    /// 明るさや音量などの特殊キー。修飾キーと組み合わせた形では送れないので、単独のときだけ記録する
+    private func handleRecordingSystemKey(_ key: Int32, flags: CGEventFlags) {
+        guard let id = recording else { return }
+        heldModifier = nil
+        let modifiers: CGEventFlags = [.maskCommand, .maskShift, .maskAlternate, .maskControl]
+        if flags.intersection(modifiers).isEmpty, let text = KeyCombo.recordedMediaText(key: key) {
+            model.setBinding(id, to: text)
+            clearSelection()
+        } else {
+            model.keymapError = "F キーとして割り当てるには、Fn も一緒に押してください"
+        }
     }
 
     private func handleRecording(_ type: CGEventType, keyCode: CGKeyCode, flags: CGEventFlags) {

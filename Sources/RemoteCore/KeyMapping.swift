@@ -170,6 +170,11 @@ public struct KeyCombo: Equatable, Sendable {
         return (parts + [name]).joined(separator: "+")
     }
 
+    /// 特殊キー(NX_KEYTYPE)を記録するときの文字列
+    public static func recordedMediaText(key: Int32) -> String? {
+        ActionCatalog.mediaKeys.first { $0.value.key == key }.map { "media:\($0.key)" }
+    }
+
     /// 修飾キー単体を記録するときの文字列
     public static func recordedModifierText(keyCode: CGKeyCode) -> String? {
         modifierOnlyKeys.filter { $0.value.code == keyCode && $0.key != "alt" }.keys.sorted().first
