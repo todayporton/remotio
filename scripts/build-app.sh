@@ -12,6 +12,7 @@ mkdir -p "$APP/Contents/MacOS" "$APP/Contents/Frameworks" "$APP/Contents/Resourc
 cp /opt/homebrew/opt/opus/COPYING "$APP/Contents/Resources/libopus-COPYING.txt"
 cp Vendor/libASPL/LICENSE "$APP/Contents/Resources/libASPL-LICENSE.txt"
 cp -R build/RemotioMicrophone.driver "$APP/Contents/Resources/"
+cp Assets/AppIcon.icns "$APP/Contents/Resources/"
 cp "$BIN" "$APP/Contents/MacOS/Remotio"
 cp -L "$OPUS" "$APP/Contents/Frameworks/"
 chmod u+w "$APP"/Contents/MacOS/* "$APP"/Contents/Frameworks/*
@@ -24,6 +25,7 @@ cat > "$APP/Contents/Info.plist" <<'P'
 <key>CFBundleIdentifier</key><string>online.todayporton.remotio</string>
 <key>CFBundleExecutable</key><string>Remotio</string>
 <key>CFBundleName</key><string>Remotio</string>
+<key>CFBundleIconFile</key><string>AppIcon</string>
 <key>CFBundlePackageType</key><string>APPL</string>
 <key>CFBundleShortVersionString</key><string>0.1</string>
 <key>CFBundleVersion</key><string>1</string>
