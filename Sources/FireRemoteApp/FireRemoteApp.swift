@@ -5,17 +5,6 @@ import SwiftUI
 final class AppDelegate: NSObject, NSApplicationDelegate {
     var model: AppModel?
 
-    func applicationDidFinishLaunching(_ notification: Notification) {
-        // Window シーンは起動時に自動で開くため、常駐アプリとして閉じておく
-        guard !CommandLine.arguments.contains("--show-window") else {
-            NSApp.activate(ignoringOtherApps: true)
-            return
-        }
-        DispatchQueue.main.async {
-            NSApp.windows.filter { $0.identifier?.rawValue == "settings" }.forEach { $0.close() }
-        }
-    }
-
     func applicationWillTerminate(_ notification: Notification) { model?.shutdown() }
     func applicationShouldTerminateAfterLastWindowClosed(_ sender: NSApplication) -> Bool { false }
 }

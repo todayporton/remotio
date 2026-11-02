@@ -44,6 +44,14 @@ swift test
 
 `listen` / `record` では、ボタン入力は Mac 側にも通常のキー入力として届きます。`--seize`(占有モード)は一般ユーザーでは `kIOReturnNotPrivileged` で失敗します。
 
+## メニューバーアプリ
+
+```sh
+scripts/build-app.sh      # build/FireRemote.app を作成(libopus を同梱)
+```
+
+接続状態とマイク状態の表示、音声の出力先の選択、キー割り当ての編集、ログ表示、ログイン時の起動の設定ができます。出力先の初期値は「なし」です。入力監視の権限が必要で、キー送信にはアクセシビリティの権限も必要です。アドホック署名のため、再ビルドすると権限の再設定が必要になることがあります。
+
 ## 構成
 
 | パス | 役割 |
@@ -56,7 +64,10 @@ swift test
 | `Sources/RemoteCore/PCMOutput.swift` | 指定デバイスへの PCM 出力 |
 | `Sources/RemoteCore/AudioDevices.swift` | オーディオデバイスの列挙、検証用の入力録音 |
 | `Sources/RemoteCore/Files.swift` | WAV 書き出し、生 Report の記録、音声パケットの統計 |
+| `Sources/RemoteCore/KeyMapping.swift` | キー割り当て、キー送信 |
+| `Sources/RemoteCore/KeySuppressor.swift` | 対象リモコンの元のキー入力の無効化 |
 | `Sources/fireremote/main.swift` | CLI |
+| `Sources/FireRemoteApp/` | メニューバーアプリ |
 
 別のリモコンに対応するときは `RemoteProfile` を実装します。
 
@@ -111,7 +122,9 @@ swift test
 - 他のアプリで BlackHole をマイクとして選ぶ確認はしていません(音声が届くことは `capture-input` で確認)。
 - 2026-11-02 の確認中に `bluetoothd` が1回クラッシュしました(SIGSEGV)。原因は不明です。リモコンは決定ボタンを押すと再接続できました。
 - キーの実送信(`run`、`send-key`)は未検証です。権限なしで拒否されることのみ VM で確認しました。
-- メニューバーアプリ(Phase 7)は未実装です。
+- 元のキー入力の無効化は、方向キー、決定(カーソルが動かないことを確認)と音声ボタン(Spotlight が開かないことを確認)について実機で確認済みです。戻る、再生・停止の Mac 側の挙動は個別に見ていません。割り当てのないボタンのキー入力は Mac に届きます。
+- メニューバーアプリは VM で GUI のみ確認しました(リモコンなし、音声なし)。実機のリモコンとの組み合わせ、再起動後の設定の復元は未検証です。
+- プログラムが異常終了すると、元のキー入力の無効化はリモコンが再接続するまで残ります。
 
 ## 参考
 
