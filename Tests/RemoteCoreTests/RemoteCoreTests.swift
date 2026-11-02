@@ -122,6 +122,18 @@ final class RemoteCoreTests: XCTestCase {
         XCTAssertEqual(mapper.releaseAll(), [])
     }
 
+    func testSystemUsagesForSuppression() {
+        let p = FireTVRemoteProfile()
+        XCTAssertEqual(p.systemUsage(of: "dpad_up"), 0x7_0000_0052)
+        XCTAssertEqual(p.systemUsage(of: "select"), 0x7_0000_0058)
+        XCTAssertEqual(p.systemUsage(of: "back"), 0x7_0000_00F1)
+        XCTAssertEqual(p.systemUsage(of: "play_pause"), 0xC_0000_00CD)
+        XCTAssertNil(p.systemUsage(of: "nosuch"))
+        XCTAssertEqual(KeySuppressor.mappingJSON(usages: []), "{\"UserKeyMapping\":[]}")
+        XCTAssertEqual(KeySuppressor.mappingJSON(usages: [1]),
+                       "{\"UserKeyMapping\":[{\"HIDKeyboardModifierMappingSrc\":1,\"HIDKeyboardModifierMappingDst\":0}]}")
+    }
+
     func testAudioDeviceResolve() throws {
         let list = [
             AudioDeviceInfo(id: 1, uid: "BlackHole2ch_UID", name: "BlackHole 2ch", inputChannels: 2, outputChannels: 2),

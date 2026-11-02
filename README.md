@@ -36,13 +36,13 @@ swift test
 .build/debug/fireremote run --config keymap.json           # 割り当てを変更
 ```
 
-既定の割り当ては、方向キーが矢印、決定が Return、戻るが Escape、再生・停止が Space です。音声ボタンは Push-to-Talk 専用です。`keymap.json` の例: `{"dpad_up": "up", "play_pause": "cmd+shift+p"}`。キー送信にはアクセシビリティの権限が必要です。`run` は既定で占有モードを使います(`--no-seize` で無効)。
+既定の割り当ては、方向キーが矢印、決定が Return、戻るが Escape、再生・停止が Space です。音声ボタンは Push-to-Talk 専用です。`keymap.json` の例: `{"dpad_up": "up", "play_pause": "cmd+shift+p"}`。キー送信にはアクセシビリティの権限が必要です。`run` は割り当てたボタンの元のキー入力を、`hidutil` の `UserKeyMapping` で対象リモコンに限って止めます(`--no-suppress` で無効)。
 
 `stream` の出力先は `--device` での指定が必須です。システムの既定デバイスは変更しません。他のアプリでは、入力デバイスとして BlackHole を選びます。
 
 `record` は音声ボタンを離すと終了し、`captures/` に `.wav` と生 Report の `.bin` を保存します。`captures/` には音声が残るため、Git の管理対象外にしています。
 
-`--seize` を付けるとデバイスを占有モードで開きます(未検証)。付けない場合、ボタン入力は Mac 側にも通常のキー入力として届きます。
+`listen` / `record` / `stream` では、ボタン入力は Mac 側にも通常のキー入力として届きます。`--seize`(占有モード)は一般ユーザーでは `kIOReturnNotPrivileged` で失敗します。
 
 ## 構成
 
@@ -108,7 +108,6 @@ swift test
 - 録音した音声を人の耳で確認した結果は未記録です(信号レベルは発話らしい変化を確認済み)。
 - 約 13 秒を超える録音と、話してから届くまでの遅延は未計測です。
 - 欠落の値は到着時刻からの推定です。payload 内にシーケンス番号があるかは確認していません。
-- `--seize` は未検証です。
 - 他のアプリで BlackHole をマイクとして選ぶ確認はしていません(音声が届くことは `capture-input` で確認)。
 - 2026-11-02 の確認中に `bluetoothd` が1回クラッシュしました(SIGSEGV)。原因は不明です。リモコンは決定ボタンを押すと再接続できました。
 - キーの実送信(`run`、`send-key`)は未検証です。権限なしで拒否されることのみ VM で確認しました。

@@ -29,6 +29,8 @@ public final class HIDRemote {
 
     public var onConnect: ((IOHIDDevice) -> Void)?
     public var onDisconnect: (() -> Void)?
+    /// 接続のたびに呼ばれる追加処理(VoiceSession が onConnect を使うため別に用意)
+    public var onConnectExtra: (() -> Void)?
     public var onReport: ((InputReport) -> Void)?
 
     private let manager: IOHIDManager
@@ -96,6 +98,7 @@ public final class HIDRemote {
             },
             Unmanaged.passUnretained(self).toOpaque())
         onConnect?(device)
+        onConnectExtra?()
     }
 
     private func handle(reportID: UInt8, report: UnsafePointer<UInt8>, length: CFIndex, timestamp: UInt64) {

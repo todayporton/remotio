@@ -14,7 +14,7 @@ let usage = """
   devices                   オーディオデバイスの一覧を表示
   stream --device 名前 [--seconds N] [--seize]
                             音声ボタンを押している間の音声を指定デバイスへ出力
-  run [--config 割り当て.json] [--device 名前] [--dry-run] [--no-seize] [--seconds N]
+  run [--config 割り当て.json] [--device 名前] [--dry-run] [--no-suppress] [--seconds N]
                             キー割り当てを有効化。--device 指定時は音声も出力
   send-key <キー>           指定キーを 1 回送信(検証用。例: cmd+shift+a)
   replay <入力.bin> --device 名前
@@ -230,7 +230,7 @@ func stream(_ args: [String]) throws {
     CFRunLoopRun()
 }
 
-/// キー割り当てを有効にして常駐する。既定で占有モードを使い、元のキー入力が二重に届かないようにする。
+/// キー割り当てを有効にして常駐する。割り当てたボタンの元のキー入力は止めて、二重に届かないようにする。
 func run(_ args: [String]) throws {
     let profile = FireTVRemoteProfile()
     let dryRun = args.contains("--dry-run")
@@ -253,7 +253,8 @@ func run(_ args: [String]) throws {
         output = nil
     }
 
-    let session = try VoiceSession(profile: profile, seize: !args.contains("--no-seize"))
+    let session = try VoiceSession(profile: profile)
+    let suppressor = args.contains("--no-suppress") ? nil : KeySuppressor(profile: profile, buttons: map.bindings.keys)
     var mapper = KeyMapper(map: map)
     func apply(_ action: KeyAction) {
         print("\(timestamp()) キー\(action.isDown ? "押下" : "解放"): \(action.combo.text)\(dryRun ? " (dry-run)" : "")")
@@ -262,6 +263,7 @@ func run(_ args: [String]) throws {
     func finish() {
         mapper.releaseAll().forEach(apply)
         session.shutdown()
+        if let suppressor, !suppressor.clear() { print("警告: 元のキー入力の設定を戻せませんでした") }
         output?.stop()
         print("統計: \(session.stats.summary)")
         exit(0)
@@ -276,6 +278,11 @@ func run(_ args: [String]) throws {
         if let action = mapper.process(event) { apply(action) }
     }
     session.onDisconnect = { mapper.releaseAll().forEach(apply) }
+    session.remote.onConnectExtra = {
+        if let suppressor {
+            print("\(timestamp()) 元のキー入力の無効化: \(suppressor.apply() ? "成功" : "失敗")")
+        }
+    }
 
     startOrExit(session)
     let signals = onSignal { finish() }
