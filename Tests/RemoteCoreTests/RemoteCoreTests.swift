@@ -128,6 +128,7 @@ final class RemoteCoreTests: XCTestCase {
         XCTAssertEqual(p.systemUsage(of: "select"), 0x7_0000_0058)
         XCTAssertEqual(p.systemUsage(of: "back"), 0x7_0000_00F1)
         XCTAssertEqual(p.systemUsage(of: "play_pause"), 0xC_0000_00CD)
+        XCTAssertEqual(p.systemUsage(of: "voice"), 0xC_0000_0221)
         XCTAssertNil(p.systemUsage(of: "nosuch"))
         XCTAssertEqual(KeySuppressor.mappingJSON(usages: []), "{\"UserKeyMapping\":[]}")
         XCTAssertEqual(KeySuppressor.mappingJSON(usages: [1]),

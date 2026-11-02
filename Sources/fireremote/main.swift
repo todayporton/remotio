@@ -12,7 +12,7 @@ let usage = """
   record [--out 名前] [--seconds N] [--seize]
                             音声ボタンを押している間を captures/名前.{bin,wav} に保存
   devices                   オーディオデバイスの一覧を表示
-  stream --device 名前 [--seconds N] [--seize]
+  stream --device 名前 [--seconds N] [--seize] [--no-suppress]
                             音声ボタンを押している間の音声を指定デバイスへ出力
   run [--config 割り当て.json] [--device 名前] [--dry-run] [--no-suppress] [--seconds N]
                             キー割り当てを有効化。--device 指定時は音声も出力
@@ -202,12 +202,21 @@ func defaultsSnapshot() -> () -> Void {
 func stream(_ args: [String]) throws {
     let device = try outputDevice(args)
     let output = try PCMOutput(device: device)
-    let session = try VoiceSession(profile: FireTVRemoteProfile(), seize: args.contains("--seize"))
+    let profile = FireTVRemoteProfile()
+    let session = try VoiceSession(profile: profile, seize: args.contains("--seize"))
+    // 音声ボタンで Spotlight が開かないようにする
+    let suppressor = args.contains("--no-suppress") ? nil : KeySuppressor(profile: profile, buttons: [profile.voiceButtonName])
     let checkDefaults = defaultsSnapshot()
     try output.start()
+    session.remote.onConnectExtra = {
+        if let suppressor {
+            print("\(timestamp()) 音声ボタンのキー入力の無効化: \(suppressor.apply() ? "成功" : "失敗")")
+        }
+    }
 
     func finish() {
         session.shutdown()
+        if let suppressor, !suppressor.clear() { print("警告: 元のキー入力の設定を戻せませんでした") }
         output.stop()
         print("統計: \(session.stats.summary)")
         checkDefaults()
@@ -254,7 +263,7 @@ func run(_ args: [String]) throws {
     }
 
     let session = try VoiceSession(profile: profile)
-    let suppressor = args.contains("--no-suppress") ? nil : KeySuppressor(profile: profile, buttons: map.bindings.keys)
+    let suppressor = args.contains("--no-suppress") ? nil : KeySuppressor(profile: profile, buttons: Array(map.bindings.keys) + [profile.voiceButtonName])
     var mapper = KeyMapper(map: map)
     func apply(_ action: KeyAction) {
         print("\(timestamp()) キー\(action.isDown ? "押下" : "解放"): \(action.combo.text)\(dryRun ? " (dry-run)" : "")")

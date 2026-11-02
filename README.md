@@ -36,13 +36,13 @@ swift test
 .build/debug/fireremote run --config keymap.json           # 割り当てを変更
 ```
 
-既定の割り当ては、方向キーが矢印、決定が Return、戻るが Escape、再生・停止が Space です。音声ボタンは Push-to-Talk 専用です。`keymap.json` の例: `{"dpad_up": "up", "play_pause": "cmd+shift+p"}`。キー送信にはアクセシビリティの権限が必要です。`run` は割り当てたボタンの元のキー入力を、`hidutil` の `UserKeyMapping` で対象リモコンに限って止めます(`--no-suppress` で無効)。
+既定の割り当ては、方向キーが矢印、決定が Return、戻るが Escape、再生・停止が Space です。音声ボタンは Push-to-Talk 専用です。`keymap.json` の例: `{"dpad_up": "up", "play_pause": "cmd+shift+p"}`。キー送信にはアクセシビリティの権限が必要です。`run` は割り当てたボタンと音声ボタンの元のキー入力を、`stream` は音声ボタン(Mac では Spotlight が開く)の元のキー入力を、`hidutil` の `UserKeyMapping` で対象リモコンに限って止めます(`--no-suppress` で無効)。
 
 `stream` の出力先は `--device` での指定が必須です。システムの既定デバイスは変更しません。他のアプリでは、入力デバイスとして BlackHole を選びます。
 
 `record` は音声ボタンを離すと終了し、`captures/` に `.wav` と生 Report の `.bin` を保存します。`captures/` には音声が残るため、Git の管理対象外にしています。
 
-`listen` / `record` / `stream` では、ボタン入力は Mac 側にも通常のキー入力として届きます。`--seize`(占有モード)は一般ユーザーでは `kIOReturnNotPrivileged` で失敗します。
+`listen` / `record` では、ボタン入力は Mac 側にも通常のキー入力として届きます。`--seize`(占有モード)は一般ユーザーでは `kIOReturnNotPrivileged` で失敗します。
 
 ## 構成
 
