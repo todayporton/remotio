@@ -138,3 +138,7 @@ scripts/build-dmg.sh      # build/Remotio.dmg を作成
 - [fire-remote-client](https://github.com/justanotheruseer/fire-remote-client)(MIT): プロトコルとボタンのコード表を参考にしました。
 - [SayAll / remote-mic-app](https://github.com/HD838A/remote-mic-app)(GPL-3.0): 設計資料のみ確認し、コードは流用していません。
 - [libopus](https://opus-codec.org/)(BSD): 動的リンクで使用します。
+
+## ライセンス
+
+MIT — [LICENSE](LICENSE) を参照してください。同梱する libopus は BSD ライセンスです。
