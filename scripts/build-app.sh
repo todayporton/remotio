@@ -7,7 +7,8 @@ BIN="$(swift build -c release --show-bin-path)/FireRemoteApp"
 APP=build/FireRemote.app
 OPUS=/opt/homebrew/opt/opus/lib/libopus.0.dylib
 /bin/rm -rf "$APP"
-mkdir -p "$APP/Contents/MacOS" "$APP/Contents/Frameworks"
+mkdir -p "$APP/Contents/MacOS" "$APP/Contents/Frameworks" "$APP/Contents/Resources"
+cp /opt/homebrew/opt/opus/COPYING "$APP/Contents/Resources/libopus-COPYING.txt"
 cp "$BIN" "$APP/Contents/MacOS/FireRemote"
 cp -L "$OPUS" "$APP/Contents/Frameworks/"
 chmod u+w "$APP"/Contents/MacOS/* "$APP"/Contents/Frameworks/*
@@ -17,7 +18,7 @@ cat > "$APP/Contents/Info.plist" <<'P'
 <?xml version="1.0" encoding="UTF-8"?>
 <!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
 <plist version="1.0"><dict>
-<key>CFBundleIdentifier</key><string>local.firetvremote.app</string>
+<key>CFBundleIdentifier</key><string>io.github.potkc.fireremote</string>
 <key>CFBundleExecutable</key><string>FireRemote</string>
 <key>CFBundleName</key><string>Fire Remote</string>
 <key>CFBundlePackageType</key><string>APPL</string>
@@ -27,10 +28,10 @@ cat > "$APP/Contents/Info.plist" <<'P'
 <key>LSUIElement</key><true/>
 </dict></plist>
 P
-# 開発用証明書があれば使う。署名が変わらないため、再ビルドしても権限が外れにくい
-IDENTITY="${CODESIGN_IDENTITY:-$(/usr/bin/security find-identity -v -p codesigning | awk -F'"' '/Apple Development|Developer ID Application/ {print $2; exit}')}"
-IDENTITY="${IDENTITY:--}"
+# 配布物の署名を変えないよう、証明書は固定する(権限はこの署名に結びつく)
+IDENTITY="${CODESIGN_IDENTITY:-FireRemote Local}"
 echo "署名: $IDENTITY"
 codesign --force --sign "$IDENTITY" "$APP/Contents/Frameworks/libopus.0.dylib"
 codesign --force --sign "$IDENTITY" "$APP"
+codesign --verify --deep --strict "$APP"
 echo "$APP"
