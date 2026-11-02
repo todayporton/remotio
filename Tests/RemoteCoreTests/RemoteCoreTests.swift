@@ -270,4 +270,32 @@ final class RemoteCoreTests: XCTestCase {
         XCTAssertEqual(sessions.maxGapNs, 20_000_000)
         XCTAssertEqual(sessions.spanSeconds, 0.08, accuracy: 0.001)
     }
+
+    func testGainAmplifiesAttenuatesAndClips() {
+        let unity = AudioGain.apply([1000, -1000], decibels: 0)
+        XCTAssertEqual(unity.samples, [1000, -1000])
+        XCTAssertFalse(unity.clipped)
+
+        let up = AudioGain.apply([1000], decibels: 20)
+        XCTAssertEqual(up.samples, [10000])
+        XCTAssertEqual(AudioGain.apply([1000], decibels: -6).samples[0], 501, accuracy: 1)
+
+        let clipped = AudioGain.apply([20000, -20000], decibels: 24)
+        XCTAssertEqual(clipped.samples, [Int16.max, Int16.min])
+        XCTAssertTrue(clipped.clipped)
+        XCTAssertEqual(clipped.peak, 1, accuracy: 0.001)
+    }
+
+    func testGainIsClampedToItsRange() {
+        XCTAssertEqual(AudioGain.clamp(decibels: 100), AudioGain.maxDecibels)
+        XCTAssertEqual(AudioGain.clamp(decibels: -100), AudioGain.minDecibels)
+        XCTAssertEqual(AudioGain.apply([100], decibels: 100).samples, AudioGain.apply([100], decibels: 24).samples)
+    }
+
+    func testMeterPosition() {
+        XCTAssertEqual(AudioGain.meterPosition(peak: 0), 0)
+        XCTAssertEqual(AudioGain.meterPosition(peak: 0.0001), 0, accuracy: 0.001)
+        XCTAssertEqual(AudioGain.meterPosition(peak: 1), 1, accuracy: 0.001)
+        XCTAssertEqual(AudioGain.meterPosition(peak: 0.1), 2.0 / 3, accuracy: 0.001)
+    }
 }

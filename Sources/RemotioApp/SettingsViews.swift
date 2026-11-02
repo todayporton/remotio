@@ -478,6 +478,62 @@ struct ButtonsPage: View {
 
 // MARK: - 接続と音声
 
+/// マイクのゲインと入力レベル
+struct MicInputSection: View {
+    @ObservedObject var model: AppModel
+    @ObservedObject var meter: MicLevelMeter
+
+    var body: some View {
+        VStack(alignment: .leading, spacing: 10) {
+            Text("マイク入力").font(.headline)
+            HStack(spacing: 10) {
+                Text("ゲイン")
+                Slider(value: $model.micGainDecibels,
+                       in: AudioGain.minDecibels...AudioGain.maxDecibels, step: 1)
+                    .accessibilityLabel("マイクのゲイン")
+                Text(String(format: "%+.0f dB", model.micGainDecibels))
+                    .monospacedDigit()
+                    .frame(width: 52, alignment: .trailing)
+                Button("リセット") { model.micGainDecibels = 0 }
+                    .disabled(model.micGainDecibels == 0)
+            }
+            HStack(spacing: 10) {
+                Text("レベル")
+                MicMeterBar(position: meter.position)
+                    .frame(height: 10)
+                    .accessibilityLabel("入力レベル")
+                    .accessibilityValue("\(Int(meter.position * 100))%")
+            }
+            Text(meter.clipping ? "音が割れています。ゲインを下げてください。"
+                 : "音声ボタンを押して話すと、レベルを確認できます。設定画面が前面の間は、割り当てたキーを送りません。")
+                .font(.caption)
+                .foregroundStyle(meter.clipping ? Color.red : Color.secondary)
+                .fixedSize(horizontal: false, vertical: true)
+        }
+    }
+}
+
+struct MicMeterBar: View {
+    let position: Double
+
+    var body: some View {
+        GeometryReader { geometry in
+            ZStack(alignment: .leading) {
+                Capsule().fill(Color.primary.opacity(0.1))
+                LinearGradient(stops: [
+                    .init(color: .green, location: 0),
+                    .init(color: .green, location: 0.75),
+                    .init(color: .yellow, location: 0.9),
+                    .init(color: .red, location: 1),
+                ], startPoint: .leading, endPoint: .trailing)
+                .mask(alignment: .leading) {
+                    Capsule().frame(width: geometry.size.width * position)
+                }
+            }
+        }
+    }
+}
+
 struct ConnectionPage: View {
     @ObservedObject var model: AppModel
 
@@ -544,6 +600,7 @@ struct ConnectionPage: View {
                                 .font(.caption).foregroundStyle(.secondary)
                         }
                     }
+                    Card { MicInputSection(model: model, meter: model.micMeter) }
                     Card {
                         Toggle("ログイン時に起動", isOn: Binding(get: { model.loginItemEnabled },
                                                           set: { model.setLoginItem($0) }))

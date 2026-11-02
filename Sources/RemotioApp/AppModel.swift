@@ -38,6 +38,12 @@ final class AppModel: ObservableObject {
         }
     }
 
+    /// マイクのゲイン(dB)
+    @Published var micGainDecibels: Double {
+        didSet { UserDefaults.standard.set(micGainDecibels, forKey: "micGainDecibels") }
+    }
+    let micMeter = MicLevelMeter()
+
     private let profile = FireTVRemoteProfile()
     private var session: VoiceSession?
     private var output: PCMOutput?
@@ -52,6 +58,7 @@ final class AppModel: ObservableObject {
     }
 
     init() {
+        micGainDecibels = AudioGain.clamp(decibels: UserDefaults.standard.double(forKey: "micGainDecibels"))
         useCustomOutput = UserDefaults.standard.bool(forKey: "useCustomOutput")
         selectedDeviceUID = UserDefaults.standard.string(forKey: "customOutputDeviceUID")
         if let data = try? Data(contentsOf: keymapURL),
@@ -75,9 +82,15 @@ final class AppModel: ObservableObject {
         do {
             let session = try VoiceSession(profile: profile)
             session.onLog = { [weak self] in self?.log($0) }
-            session.onPCM = { [weak self] in self?.output?.enqueue($0) }
+            session.onPCM = { [weak self] samples in
+                guard let self else { return }
+                let result = AudioGain.apply(samples, decibels: self.micGainDecibels)
+                self.micMeter.update(peak: result.peak, clipped: result.clipped)
+                self.output?.enqueue(result.samples)
+            }
             session.onMicChange = { [weak self] enabled in
                 self?.micOn = enabled
+                self?.micMeter.reset()
                 if enabled { self?.output?.beginSession() } else { self?.output?.endSession() }
             }
             session.onButton = { [weak self] event in self?.handle(event) }
