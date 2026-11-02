@@ -14,6 +14,8 @@ final class AppModel: ObservableObject {
     @Published private(set) var inputMonitoringGranted = false
     @Published private(set) var loginItemEnabled = SMAppService.mainApp.status == .enabled
     @Published var keymapError: String?
+    /// 押されているボタン(画面のリモコン図とカードに反映する)
+    @Published private(set) var pressedButtons: Set<String> = []
     @Published private(set) var bindings: [String: String] = KeyMap.defaultBindings
     @Published var selectedDeviceUID: String? {
         didSet {
@@ -23,15 +25,10 @@ final class AppModel: ObservableObject {
         }
     }
 
-    /// 設定画面に出すボタン(音声ボタンは Push-to-Talk 専用なので含めない)
-    static let mappableButtons = ["dpad_up", "dpad_down", "dpad_left", "dpad_right", "select", "back",
-                                  "play_pause", "home", "menu", "rewind", "fast_forward",
-                                  "volume_up", "volume_down", "mute", "tv"]
-
     private let profile = FireTVRemoteProfile()
     private var session: VoiceSession?
     private var output: PCMOutput?
-    private var mapper: KeyMapper?
+    private var router: ButtonKeyRouter?
     private var suppressor: KeySuppressor?
 
     private var keymapURL: URL {
@@ -73,6 +70,7 @@ final class AppModel: ObservableObject {
             session.onButton = { [weak self] event in self?.handle(event) }
             session.onDisconnect = { [weak self] in
                 self?.connected = false
+                self?.pressedButtons = []
                 self?.releaseKeys()
             }
             session.remote.onConnectExtra = { [weak self] in
@@ -92,8 +90,8 @@ final class AppModel: ObservableObject {
     }
 
     private func handle(_ event: ButtonEvent) {
-        guard let action = mapper?.process(event) else { return }
-        post(action)
+        if event.isDown { pressedButtons.insert(event.name) } else { pressedButtons.remove(event.name) }
+        router?.process(event)
     }
 
     private func post(_ action: KeyAction) {
@@ -105,16 +103,14 @@ final class AppModel: ObservableObject {
     }
 
     private func releaseKeys() {
-        guard var m = mapper else { return }
-        m.releaseAll().forEach(post)
-        mapper = m
+        router?.releaseAll()
     }
 
     private func rebuildMapping() {
         releaseKeys()
         do {
-            let map = try KeyMap(bindings, voiceButton: profile.voiceButtonName)
-            mapper = KeyMapper(map: map)
+            let map = try KeyMap(bindings)
+            router = ButtonKeyRouter(map: map, voiceButton: profile.voiceButtonName) { [weak self] in self?.post($0) }
             suppressor = KeySuppressor(profile: profile, buttons: Array(map.bindings.keys) + [profile.voiceButtonName])
         } catch {
             keymapError = "\(error)"
@@ -182,16 +178,20 @@ final class AppModel: ObservableObject {
         refreshPermissions()
     }
 
-    /// 空欄は割り当てなしとして扱う。不正な指定があれば保存しない。
-    func saveBindings(_ edited: [String: String]) {
-        let cleaned = edited.compactMapValues { value -> String? in
-            let t = value.trimmingCharacters(in: .whitespaces)
-            return t.isEmpty ? nil : t
-        }
+    /// 1 ボタンの割り当てを変更して保存する。nil で割り当てなし。
+    func setBinding(_ button: String, to key: String?) {
+        var edited = bindings
+        edited[button] = key
+        save(edited)
+    }
+
+    func restoreDefaultBindings() { save(KeyMap.defaultBindings) }
+
+    private func save(_ edited: [String: String]) {
         do {
-            _ = try KeyMap(cleaned, voiceButton: profile.voiceButtonName)
-            try JSONEncoder().encode(cleaned).write(to: keymapURL)
-            bindings = cleaned
+            _ = try KeyMap(edited)
+            try JSONEncoder().encode(edited).write(to: keymapURL)
+            bindings = edited
             keymapError = nil
             rebuildMapping()
             if connected { applySuppression() }
@@ -199,6 +199,11 @@ final class AppModel: ObservableObject {
         } catch {
             keymapError = "\(error)"
         }
+    }
+
+    var hasVirtualDeviceSelected: Bool {
+        guard let uid = selectedDeviceUID else { return false }
+        return outputDevices.first { $0.uid == uid }?.inputChannels ?? 0 > 0
     }
 
     func shutdown() {

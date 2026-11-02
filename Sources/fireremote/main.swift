@@ -246,9 +246,9 @@ func run(_ args: [String]) throws {
     let dryRun = args.contains("--dry-run")
     let map: KeyMap
     if let path = option("--config", in: args) {
-        map = try KeyMap.load(url: URL(fileURLWithPath: path), voiceButton: profile.voiceButtonName)
+        map = try KeyMap.load(url: URL(fileURLWithPath: path))
     } else {
-        map = try KeyMap(KeyMap.defaultBindings, voiceButton: profile.voiceButtonName)
+        map = try KeyMap(KeyMap.defaultBindings)
     }
     if !dryRun && !KeyInjector.isTrusted {
         print("アクセシビリティの権限がないためキーを送信できません。--dry-run なら権限なしで確認できます。")
@@ -266,13 +266,12 @@ func run(_ args: [String]) throws {
 
     let session = try VoiceSession(profile: profile)
     let suppressor = args.contains("--no-suppress") ? nil : KeySuppressor(profile: profile, buttons: Array(map.bindings.keys) + [profile.voiceButtonName])
-    var mapper = KeyMapper(map: map)
-    func apply(_ action: KeyAction) {
+    let router = ButtonKeyRouter(map: map, voiceButton: profile.voiceButtonName) { action in
         print("\(timestamp()) キー\(action.isDown ? "押下" : "解放"): \(action.combo.text)\(dryRun ? " (dry-run)" : "")")
         if !dryRun { KeyInjector.post(action) }
     }
     func finish() {
-        mapper.releaseAll().forEach(apply)
+        router.releaseAll()
         session.shutdown()
         if let suppressor, !suppressor.clear() { print("警告: 元のキー入力の設定を戻せませんでした") }
         output?.stop()
@@ -285,10 +284,8 @@ func run(_ args: [String]) throws {
     session.onMicChange = { enabled in
         if enabled { output?.beginSession() } else { output?.endSession() }
     }
-    session.onButton = { event in
-        if let action = mapper.process(event) { apply(action) }
-    }
-    session.onDisconnect = { mapper.releaseAll().forEach(apply) }
+    session.onButton = { router.process($0) }
+    session.onDisconnect = { router.releaseAll() }
     session.remote.onConnectExtra = {
         if let suppressor {
             print("\(timestamp()) 元のキー入力の無効化: \(suppressor.apply() ? "成功" : "失敗")")

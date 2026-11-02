@@ -101,21 +101,44 @@ final class RemoteCoreTests: XCTestCase {
         XCTAssertThrowsError(try KeyCombo(""))
     }
 
-    func testVoiceButtonCannotBeMapped() {
-        XCTAssertThrowsError(try KeyMap(["voice": "a"], voiceButton: "voice")) {
-            XCTAssertEqual($0 as? KeyMapError, .voiceReserved)
+    func testModifierOnlyAndRecordedText() throws {
+        XCTAssertEqual(try KeyCombo("fn").keyCode, 63)
+        XCTAssertEqual(try KeyCombo("fn").modifierOnlyFlag, CGEventFlags.maskSecondaryFn.rawValue)
+        XCTAssertEqual(try KeyCombo("ropt").keyCode, 61)
+        XCTAssertNil(try KeyCombo("cmd+a").modifierOnlyFlag)
+        XCTAssertEqual(KeyCombo.recordedText(keyCode: 36, flags: []), "return")
+        XCTAssertEqual(KeyCombo.recordedText(keyCode: 35, flags: [.maskCommand, .maskShift]), "shift+cmd+p")
+        XCTAssertEqual(KeyCombo.recordedModifierText(keyCode: 63), "fn")
+        XCTAssertEqual(KeyCombo.displayText("cmd+shift+p"), "⌘⇧P")
+        // 記録した文字列はそのまま読み込める
+        XCTAssertEqual(try KeyCombo("shift+cmd+p").keyCode, 35)
+    }
+
+    func testVoiceKeyReleaseIsDelayedAndKeepsOrder() throws {
+        var posted: [KeyAction] = []
+        let router = ButtonKeyRouter(map: try KeyMap(["voice": "fn"]), voiceButton: "voice", voiceReleaseDelay: 60) {
+            posted.append($0)
         }
+        let fn = try KeyCombo("fn")
+        router.process(ButtonEvent(name: "voice", isDown: true))
+        router.process(ButtonEvent(name: "voice", isDown: false))
+        XCTAssertEqual(posted, [KeyAction(combo: fn, isDown: true)])
+        // 遅延中に押し直しても、解放 → 押下 の順を保つ
+        router.process(ButtonEvent(name: "voice", isDown: true))
+        XCTAssertEqual(posted, [KeyAction(combo: fn, isDown: true), KeyAction(combo: fn, isDown: false),
+                                KeyAction(combo: fn, isDown: true)])
+        router.releaseAll()
+        XCTAssertEqual(posted.last, KeyAction(combo: fn, isDown: false))
     }
 
     func testKeyMapperPressReleaseAndCleanup() throws {
-        var mapper = KeyMapper(map: try KeyMap(KeyMap.defaultBindings, voiceButton: "voice"))
+        var mapper = KeyMapper(map: try KeyMap(KeyMap.defaultBindings))
         let ret = try KeyCombo("return")
         XCTAssertEqual(mapper.process(ButtonEvent(name: "select", isDown: true)), KeyAction(combo: ret, isDown: true))
         XCTAssertNil(mapper.process(ButtonEvent(name: "select", isDown: true)))
         XCTAssertEqual(mapper.process(ButtonEvent(name: "select", isDown: false)), KeyAction(combo: ret, isDown: false))
         XCTAssertNil(mapper.process(ButtonEvent(name: "select", isDown: false)))
-        XCTAssertNil(mapper.process(ButtonEvent(name: "voice", isDown: true)))
-        XCTAssertNil(mapper.process(ButtonEvent(name: "mute", isDown: true)))
+                XCTAssertNil(mapper.process(ButtonEvent(name: "mute", isDown: true)))
 
         _ = mapper.process(ButtonEvent(name: "select", isDown: true))
         XCTAssertEqual(mapper.releaseAll(), [KeyAction(combo: ret, isDown: false)])
