@@ -72,6 +72,10 @@ struct SettingsView: View {
             model.refreshDevices()
             model.refreshPermissions()
         }
+        // システム設定から戻ったときに権限の表示を更新する
+        .onReceive(NotificationCenter.default.publisher(for: NSApplication.didBecomeActiveNotification)) { _ in
+            model.refreshPermissions()
+        }
     }
 
     private var general: some View {

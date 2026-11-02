@@ -158,11 +158,19 @@ final class AppModel: ObservableObject {
     func requestAccessibility() {
         KeyInjector.requestTrust()
         refreshPermissions()
+        if !accessibilityGranted { openPrivacySettings("Privacy_Accessibility") }
     }
 
     func requestInputMonitoring() {
         _ = IOHIDRequestAccess(kIOHIDRequestTypeListenEvent)
         refreshPermissions()
+        if !inputMonitoringGranted { openPrivacySettings("Privacy_ListenEvent") }
+    }
+
+    /// 一度記録された権限ではダイアログが出ないため、システム設定の該当ページを開く
+    private func openPrivacySettings(_ anchor: String) {
+        guard let url = URL(string: "x-apple.systempreferences:com.apple.preference.security?\(anchor)") else { return }
+        NSWorkspace.shared.open(url)
     }
 
     func setLoginItem(_ enabled: Bool) {

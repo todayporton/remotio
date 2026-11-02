@@ -27,6 +27,10 @@ cat > "$APP/Contents/Info.plist" <<'P'
 <key>LSUIElement</key><true/>
 </dict></plist>
 P
-codesign --force --sign - "$APP/Contents/Frameworks/libopus.0.dylib"
-codesign --force --sign - "$APP"
+# 開発用証明書があれば使う。署名が変わらないため、再ビルドしても権限が外れにくい
+IDENTITY="${CODESIGN_IDENTITY:-$(/usr/bin/security find-identity -v -p codesigning | awk -F'"' '/Apple Development|Developer ID Application/ {print $2; exit}')}"
+IDENTITY="${IDENTITY:--}"
+echo "署名: $IDENTITY"
+codesign --force --sign "$IDENTITY" "$APP/Contents/Frameworks/libopus.0.dylib"
+codesign --force --sign "$IDENTITY" "$APP"
 echo "$APP"
