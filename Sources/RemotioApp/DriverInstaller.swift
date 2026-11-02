@@ -3,7 +3,6 @@ import Foundation
 /// 同梱の仮想マイクドライバを /Library/Audio/Plug-Ins/HAL へ入れる・取り除く。
 /// 管理者権限が必要で、処理の間は Mac 全体の音声が一瞬止まる。
 enum DriverInstaller {
-    static let deviceUID = "online.todayporton.remotio.microphone"
     private static let bundleName = "RemotioMicrophone.driver"
     private static let installedPath = "/Library/Audio/Plug-Ins/HAL/\(bundleName)"
 

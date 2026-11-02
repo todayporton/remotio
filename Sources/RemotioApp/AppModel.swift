@@ -21,10 +21,19 @@ final class AppModel: ObservableObject {
     /// 押されているボタン(画面のリモコン図とカードに反映する)
     @Published private(set) var pressedButtons: Set<String> = []
     @Published private(set) var bindings: [String: String] = KeyMap.defaultBindings
+    /// 「他の出力デバイスを使う」がオフのときは、内蔵の仮想マイクへ送る
+    @Published var useCustomOutput: Bool {
+        didSet {
+            guard useCustomOutput != oldValue else { return }
+            UserDefaults.standard.set(useCustomOutput, forKey: "useCustomOutput")
+            rebuildOutput()
+        }
+    }
+    /// 「他の出力デバイスを使う」で選んだデバイス
     @Published var selectedDeviceUID: String? {
         didSet {
             guard selectedDeviceUID != oldValue else { return }
-            UserDefaults.standard.set(selectedDeviceUID, forKey: "outputDeviceUID")
+            UserDefaults.standard.set(selectedDeviceUID, forKey: "customOutputDeviceUID")
             rebuildOutput()
         }
     }
@@ -34,7 +43,6 @@ final class AppModel: ObservableObject {
     private var output: PCMOutput?
     private var router: ButtonKeyRouter?
     private var suppressor: KeySuppressor?
-    private var selectMicrophoneAfterInstall = false
 
     private var keymapURL: URL {
         let dir = FileManager.default.urls(for: .applicationSupportDirectory, in: .userDomainMask)[0]
@@ -44,7 +52,8 @@ final class AppModel: ObservableObject {
     }
 
     init() {
-        selectedDeviceUID = UserDefaults.standard.string(forKey: "outputDeviceUID")
+        useCustomOutput = UserDefaults.standard.bool(forKey: "useCustomOutput")
+        selectedDeviceUID = UserDefaults.standard.string(forKey: "customOutputDeviceUID")
         if let data = try? Data(contentsOf: keymapURL),
            let saved = try? JSONDecoder().decode([String: String].self, from: data) {
             bindings = saved
@@ -52,7 +61,6 @@ final class AppModel: ObservableObject {
         refreshDevices()
         refreshPermissions()
         rebuildMapping()
-        rebuildOutput()
         start()
     }
 
@@ -127,58 +135,42 @@ final class AppModel: ObservableObject {
         log("元のキー入力の無効化: \(suppressor.apply() ? "成功" : "失敗")")
     }
 
+    /// 今の設定で音声を送る先。使えるものがなければ nil。
+    private var outputTarget: AudioDeviceInfo? {
+        if useCustomOutput {
+            guard let uid = selectedDeviceUID else { return nil }
+            return AudioDevices.device(uid: uid)
+        }
+        return AudioDevices.device(uid: AudioDevices.builtInOutputUID)
+    }
+
     private func rebuildOutput() {
         output?.stop()
         output = nil
-        guard let uid = selectedDeviceUID else { return }
-        guard let device = AudioDevices.all().first(where: { $0.uid == uid }) else {
-            log("出力先が見つかりません: \(uid)")
-            return
-        }
+        guard let device = outputTarget else { return }
         do {
             let new = try PCMOutput(device: device)
             new.onLog = { [weak self] in self?.log($0) }
             try new.start()
             output = new
-            log("音声の出力先: \(device.name)")
+            log("音声の送り先: \(device.name)")
         } catch {
             log("音声出力を開始できません: \(error)")
         }
     }
 
     func refreshDevices() {
+        // 内蔵マイクの入力側は出力を持たないので、この一覧には出ない
         outputDevices = AudioDevices.all().filter { $0.outputChannels > 0 }
         driverInstalled = DriverInstaller.isInstalled
-        driverDeviceAvailable = outputDevices.contains { $0.uid == DriverInstaller.deviceUID }
-        // インストールを選んだときは、それまでの送り先(BlackHole など)から切り替える
-        if selectMicrophoneAfterInstall && driverDeviceAvailable {
-            selectMicrophoneAfterInstall = false
-            selectedDeviceUID = DriverInstaller.deviceUID
-        }
-        selectBuiltInMicrophoneIfNeeded()
-        // Core Audio の再起動後などに、選択中のデバイスへ出力し直す
-        if output == nil, let uid = selectedDeviceUID, outputDevices.contains(where: { $0.uid == uid }) {
-            rebuildOutput()
-        }
+        driverDeviceAvailable = AudioDevices.device(uid: AudioDevices.builtInOutputUID) != nil
+            && AudioDevices.device(uid: AudioDevices.builtInMicrophoneUID) != nil
+        // Core Audio の再起動後などに、送り先へ出力し直す
+        if output == nil, outputTarget != nil { rebuildOutput() }
     }
 
-    /// 内蔵の仮想マイクが初めて使えるようになったら、一度だけ出力先に選ぶ
-    private func selectBuiltInMicrophoneIfNeeded() {
-        guard driverDeviceAvailable, selectedDeviceUID == nil,
-              !UserDefaults.standard.bool(forKey: "didAutoSelectMicrophone") else { return }
-        UserDefaults.standard.set(true, forKey: "didAutoSelectMicrophone")
-        selectedDeviceUID = DriverInstaller.deviceUID
-    }
-
-    func installDriver() {
-        selectMicrophoneAfterInstall = true
-        runDriverTask(DriverInstaller.install)
-    }
-
-    func uninstallDriver() {
-        if selectedDeviceUID == DriverInstaller.deviceUID { selectedDeviceUID = nil }
-        runDriverTask(DriverInstaller.uninstall)
-    }
+    func installDriver() { runDriverTask(DriverInstaller.install) }
+    func uninstallDriver() { runDriverTask(DriverInstaller.uninstall) }
 
     private func runDriverTask(_ task: @escaping () -> String?) {
         driverBusy = true
@@ -189,7 +181,6 @@ final class AppModel: ObservableObject {
             let error = task()
             DispatchQueue.main.async {
                 self?.driverError = error
-                if error != nil { self?.selectMicrophoneAfterInstall = false }
                 if let error { self?.log("ドライバの処理に失敗: \(error)") }
                 self?.waitForAudioSystem(attemptsLeft: 10)
             }
@@ -263,11 +254,6 @@ final class AppModel: ObservableObject {
         } catch {
             keymapError = "\(error)"
         }
-    }
-
-    var hasVirtualDeviceSelected: Bool {
-        guard let uid = selectedDeviceUID else { return false }
-        return outputDevices.first { $0.uid == uid }?.inputChannels ?? 0 > 0
     }
 
     func shutdown() {

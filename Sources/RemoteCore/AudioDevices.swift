@@ -22,6 +22,11 @@ public enum AudioDeviceError: Error, CustomStringConvertible {
 }
 
 public enum AudioDevices {
+    /// 内蔵ドライバの入力デバイス(他のアプリから見える)
+    public static let builtInMicrophoneUID = "online.todayporton.remotio.microphone"
+    /// 内蔵ドライバの隠し出力デバイス(一覧に出ないので UID で探す)
+    public static let builtInOutputUID = "online.todayporton.remotio.microphone.output"
+
     private static func address(_ selector: AudioObjectPropertySelector,
                                 scope: AudioObjectPropertyScope = kAudioObjectPropertyScopeGlobal)
         -> AudioObjectPropertyAddress {
@@ -47,6 +52,28 @@ public enum AudioDevices {
         return list.reduce(0) { $0 + Int($1.mNumberChannels) }
     }
 
+    /// UID からデバイスを探す。一覧に出ない隠しデバイスも見つかる。
+    public static func device(uid: String) -> AudioDeviceInfo? {
+        var addr = address(kAudioHardwarePropertyTranslateUIDToDevice)
+        var cfUID = uid as CFString
+        var id: AudioDeviceID = 0
+        var size = UInt32(MemoryLayout<AudioDeviceID>.size)
+        let status = withUnsafePointer(to: &cfUID) {
+            AudioObjectGetPropertyData(AudioObjectID(kAudioObjectSystemObject), &addr,
+                                       UInt32(MemoryLayout<CFString>.size), $0, &size, &id)
+        }
+        guard status == noErr, id != kAudioObjectUnknown else { return nil }
+        return info(id)
+    }
+
+    private static func info(_ id: AudioDeviceID) -> AudioDeviceInfo {
+        AudioDeviceInfo(id: id,
+                        uid: string(id, kAudioDevicePropertyDeviceUID),
+                        name: string(id, kAudioObjectPropertyName),
+                        inputChannels: channels(id, scope: kAudioObjectPropertyScopeInput),
+                        outputChannels: channels(id, scope: kAudioObjectPropertyScopeOutput))
+    }
+
     public static func all() -> [AudioDeviceInfo] {
         var addr = address(kAudioHardwarePropertyDevices)
         let system = AudioObjectID(kAudioObjectSystemObject)
@@ -54,13 +81,7 @@ public enum AudioDevices {
         guard AudioObjectGetPropertyDataSize(system, &addr, 0, nil, &size) == noErr else { return [] }
         var ids = [AudioDeviceID](repeating: 0, count: Int(size) / MemoryLayout<AudioDeviceID>.size)
         guard AudioObjectGetPropertyData(system, &addr, 0, nil, &size, &ids) == noErr else { return [] }
-        return ids.map {
-            AudioDeviceInfo(id: $0,
-                            uid: string($0, kAudioDevicePropertyDeviceUID),
-                            name: string($0, kAudioObjectPropertyName),
-                            inputChannels: channels($0, scope: kAudioObjectPropertyScopeInput),
-                            outputChannels: channels($0, scope: kAudioObjectPropertyScopeOutput))
-        }
+        return ids.map(info)
     }
 
     /// UID の完全一致を優先し、なければ名前の部分一致で 1 件に絞る。

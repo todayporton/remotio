@@ -170,7 +170,12 @@ func outputDevice(_ args: [String]) throws -> AudioDeviceInfo {
         print("--device で出力先を指定してください(一覧: remotio devices)")
         exit(64)
     }
-    return try AudioDevices.resolve(query, in: AudioDevices.all())
+    // 内蔵マイクへの出力は、一覧に出ない隠しデバイスへ送る
+    if query == "Remotio Microphone" || query == AudioDevices.builtInMicrophoneUID,
+       let hidden = AudioDevices.device(uid: AudioDevices.builtInOutputUID) {
+        return hidden
+    }
+    return try AudioDevices.device(uid: query) ?? AudioDevices.resolve(query, in: AudioDevices.all())
 }
 
 func devices() {

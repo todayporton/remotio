@@ -25,22 +25,22 @@ swift test
 .build/debug/remotio decode captures/test.bin out.wav
 
 .build/debug/remotio devices               # オーディオデバイスの一覧
-.build/debug/remotio stream --device "BlackHole 2ch"   # 音声を指定デバイスへ出力
-.build/debug/remotio replay captures/test.bin --device "BlackHole 2ch"   # 経路の検証用
-.build/debug/remotio capture-input --device "BlackHole 2ch" --out in.wav # 経路の検証用
+.build/debug/remotio stream --device "Remotio Microphone"   # 音声を指定デバイスへ出力
+.build/debug/remotio replay captures/test.bin --device "Remotio Microphone"   # 経路の検証用
+.build/debug/remotio capture-input --device "Remotio Microphone" --out in.wav # 経路の検証用
 ```
 
 キー割り当ては `run` で使います。
 
 ```sh
 .build/debug/remotio run --dry-run                      # キーを送らず判定だけ表示
-.build/debug/remotio run --device "BlackHole 2ch"       # キー割り当て + 音声出力
+.build/debug/remotio run --device "Remotio Microphone"       # キー割り当て + 音声出力
 .build/debug/remotio run --config keymap.json           # 割り当てを変更
 ```
 
 既定の割り当ては、方向キーが矢印、決定が Return、戻るが Escape、再生・停止が Space です。音声ボタンにもキーを割り当てられます。押している間はマイクが動き、キーも押され続けます。キーの解放は話し終わりの音声が届くよう 120ms 遅らせます。修飾キーだけの指定(`fn`、`ropt` など)もできます。`keymap.json` の例: `{"voice": "fn", "play_pause": "cmd+shift+p"}`。キー送信にはアクセシビリティの権限が必要です。`run` は割り当てたボタンと音声ボタンの元のキー入力を、`stream` は音声ボタン(Mac では Spotlight が開く)の元のキー入力を、`hidutil` の `UserKeyMapping` で対象リモコンに限って止めます(`--no-suppress` で無効)。
 
-`stream` の出力先は `--device` での指定が必須です。システムの既定デバイスは変更しません。他のアプリでは、入力デバイスとして BlackHole を選びます。
+`stream` の出力先は `--device` での指定が必須です。システムの既定デバイスは変更しません。他のアプリでは、入力デバイスとして Remotio Microphone を選びます。
 
 `record` は音声ボタンを離すと終了し、`captures/` に `.wav` と生 Report の `.bin` を保存します。`captures/` には音声が残るため、Git の管理対象外にしています。
 
@@ -57,7 +57,7 @@ scripts/build-dmg.sh      # build/Remotio.dmg を作成
 
 配布した DMG のアプリは公証されていないため、初回の起動時に Gatekeeper にブロックされます。システム設定 > プライバシーとセキュリティ の「このまま開く」から許可します。
 
-仮想マイク `Remotio Microphone` のドライバを同梱しています。「接続と音声」の「インストール」から、`/Library/Audio/Plug-Ins/HAL` へ入れます。管理者パスワードが必要で、処理の間は Mac の音声が一瞬止まります。BlackHole は不要です(送り先に選べば引き続き使えます)。ホストの実機で、リモコンの音声がこのデバイス経由で他のアプリへ届くこと、署名が同じなら再ビルド後も権限が維持されることを確認済みです。
+仮想マイク `Remotio Microphone` のドライバを同梱しています。「接続と音声」の「インストール」から、`/Library/Audio/Plug-Ins/HAL` へ入れます。管理者パスワードが必要で、処理の間は Mac の音声が一瞬止まります。BlackHole は不要です。ドライバは入力の一覧にだけ出て、出力の一覧には出ません。Remotio は隠しデバイスを通して音声を渡します。BlackHole などを使いたい場合は「他の出力デバイスを使う」で選べます。ホストの実機で、リモコンの音声がこのデバイス経由で他のアプリへ届くこと、署名が同じなら再ビルド後も権限が維持されることを確認済みです。
 
 接続状態とマイク状態の表示、音声の出力先の選択、リモコン図を使ったキー割り当て(キーを押して記録)、権限の確認、ログ表示、ログイン時の起動の設定ができます。リモコン図のボタン配置は実機と一致するとは限りません。出力先の初期値は「なし」です。入力監視の権限が必要で、キー送信にはアクセシビリティの権限も必要です。
 

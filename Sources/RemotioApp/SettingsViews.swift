@@ -56,7 +56,13 @@ enum SettingsPage: String, CaseIterable, Identifiable {
 
 struct SettingsView: View {
     @ObservedObject var model: AppModel
-    @State private var page = SettingsPage.buttons
+    @State private var page: SettingsPage
+
+    init(model: AppModel) {
+        self.model = model
+        // 仮想マイクが未導入なら、インストールのボタンがある画面から始める
+        _page = State(initialValue: model.driverDeviceAvailable || model.useCustomOutput ? .buttons : .connection)
+    }
 
     var body: some View {
         HStack(spacing: 0) {
@@ -431,10 +437,12 @@ struct ConnectionPage: View {
                                 Spacer()
                                 if model.driverBusy {
                                     ProgressView().controlSize(.small)
-                                } else if model.driverInstalled {
-                                    Button("アンインストール", action: model.uninstallDriver)
-                                } else {
+                                } else if !model.driverInstalled {
                                     Button("インストール", action: model.installDriver)
+                                } else if !model.driverDeviceAvailable {
+                                    Button("再インストール", action: model.installDriver)
+                                } else {
+                                    Button("アンインストール", action: model.uninstallDriver)
                                 }
                             }
                             Text(driverStatus).font(.callout).foregroundStyle(.secondary)
@@ -442,23 +450,23 @@ struct ConnectionPage: View {
                             if let error = model.driverError {
                                 Text(error).font(.caption).foregroundStyle(.red)
                             }
-                        }
-                    }
-                    Card {
-                        VStack(alignment: .leading, spacing: 12) {
-                            Text("リモコンの音声の送り先").font(.headline)
-                            HStack {
-                                Picker("送り先", selection: $model.selectedDeviceUID) {
-                                    Text("なし").tag(String?.none)
-                                    ForEach(model.outputDevices, id: \.uid) {
-                                        Text($0.name).tag(String?.some($0.uid))
+                            Divider()
+                            Toggle("他の出力デバイスを使う", isOn: $model.useCustomOutput)
+                            if model.useCustomOutput {
+                                HStack {
+                                    Picker("送り先", selection: $model.selectedDeviceUID) {
+                                        Text("なし").tag(String?.none)
+                                        ForEach(model.outputDevices, id: \.uid) {
+                                            Text($0.name).tag(String?.some($0.uid))
+                                        }
                                     }
+                                    .labelsHidden()
+                                    Button("更新", action: model.refreshDevices)
                                 }
-                                .labelsHidden()
-                                Button("更新", action: model.refreshDevices)
+                                Text("BlackHole などを選ぶと、リモコンの音声をそのデバイスへ送ります。使うアプリの入力には同じデバイスを選びます。")
+                                    .font(.caption).foregroundStyle(.secondary)
+                                    .fixedSize(horizontal: false, vertical: true)
                             }
-                            Text(outputHint).font(.callout).foregroundStyle(.secondary)
-                                .fixedSize(horizontal: false, vertical: true)
                             Text("システムの既定の入出力デバイスは変更しません。")
                                 .font(.caption).foregroundStyle(.secondary)
                         }
@@ -480,22 +488,12 @@ struct ConnectionPage: View {
 
     private var driverStatus: String {
         if model.driverInstalled && model.driverDeviceAvailable {
-            return "使用できます。下の送り先を「Remotio Microphone」にして、音声入力を使うアプリの入力にも同じものを選びます。システムの出力には設定しないでください。"
+            return "使用できます。音声入力を使うアプリの入力に「Remotio Microphone」を選んでください。"
         }
         if model.driverInstalled {
-            return "インストール済みですが、デバイスが見つかりません。Mac を再起動すると認識される場合があります。"
+            return "新しいバージョンへの更新が必要です。再インストールしてください。解決しない場合は Mac を再起動してください。"
         }
         return "他のアプリのマイクとして使うために必要です。管理者パスワードの入力が必要で、処理の間は Mac の音声が一瞬止まります。"
-    }
-
-    private var outputHint: String {
-        if model.selectedDeviceUID == nil {
-            return "他のアプリのマイクとして使うには、「Remotio Microphone」を選びます。今はリモコンの音声をどこにも送っていません。"
-        }
-        if model.hasVirtualDeviceSelected {
-            return "音声入力を使うアプリの入力に、同じデバイスを選んでください。"
-        }
-        return "このデバイスには入力がありません。音声はスピーカーなどから再生されます。"
     }
 }
 

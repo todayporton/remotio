@@ -40,6 +40,10 @@ struct MenuContent: View {
             Label(model.connected ? "リモコン: 接続中" : "リモコン: 未接続",
                   systemImage: model.connected ? "checkmark.circle.fill" : "xmark.circle")
             Label(model.micOn ? "マイク: 動作中" : "マイク: 停止中", systemImage: model.micOn ? "mic.fill" : "mic.slash")
+            if !model.driverDeviceAvailable && !model.useCustomOutput {
+                Label("仮想マイクが未インストールです", systemImage: "exclamationmark.triangle")
+                    .font(.caption).foregroundStyle(.orange)
+            }
             if let error = model.startError {
                 Text(error).font(.caption).foregroundStyle(.red)
             }
