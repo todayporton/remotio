@@ -5,7 +5,7 @@ import RemoteCore
 setvbuf(stdout, nil, _IOLBF, 0)
 
 let usage = """
-使い方: fireremote <command>
+使い方: remoteinput <command>
   probe                     デバイス・権限・HID Descriptor を表示
   listen [--seconds N] [--seize]
                             全 Report とボタンイベントを表示(マイクは操作しない)
@@ -167,7 +167,7 @@ func record(_ args: [String]) throws {
 
 func outputDevice(_ args: [String]) throws -> AudioDeviceInfo {
     guard let query = option("--device", in: args) else {
-        print("--device で出力先を指定してください(一覧: fireremote devices)")
+        print("--device で出力先を指定してください(一覧: remoteinput devices)")
         exit(64)
     }
     return try AudioDevices.resolve(query, in: AudioDevices.all())

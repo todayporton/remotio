@@ -2,12 +2,12 @@
 import PackageDescription
 
 let package = Package(
-    name: "firetv-remote-mac",
+    name: "remote-input-mac",
     platforms: [.macOS(.v13)],
     products: [
         .library(name: "RemoteCore", targets: ["RemoteCore"]),
-        .executable(name: "fireremote", targets: ["fireremote"]),
-        .executable(name: "FireRemoteApp", targets: ["FireRemoteApp"]),
+        .executable(name: "remoteinput", targets: ["remoteinput"]),
+        .executable(name: "RemoteInputApp", targets: ["RemoteInputApp"]),
     ],
     targets: [
         .systemLibrary(
@@ -21,12 +21,12 @@ let package = Package(
             swiftSettings: [.swiftLanguageMode(.v5)]
         ),
         .executableTarget(
-            name: "fireremote",
+            name: "remoteinput",
             dependencies: ["RemoteCore"],
             swiftSettings: [.swiftLanguageMode(.v5)]
         ),
         .executableTarget(
-            name: "FireRemoteApp",
+            name: "RemoteInputApp",
             dependencies: ["RemoteCore"],
             swiftSettings: [.swiftLanguageMode(.v5)]
         ),

@@ -101,7 +101,7 @@ public enum AudioDevices {
 public final class DeviceInputRecorder {
     private let device: AudioDeviceInfo
     private let writer: WAVWriter
-    private let queue = DispatchQueue(label: "fireremote.capture-input")
+    private let queue = DispatchQueue(label: "remoteinput.capture-input")
     private var procID: AudioDeviceIOProcID?
 
     public init(device: AudioDeviceInfo, url: URL) throws {

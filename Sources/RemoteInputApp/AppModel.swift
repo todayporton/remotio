@@ -33,7 +33,7 @@ final class AppModel: ObservableObject {
 
     private var keymapURL: URL {
         let dir = FileManager.default.urls(for: .applicationSupportDirectory, in: .userDomainMask)[0]
-            .appendingPathComponent("FireRemote", isDirectory: true)
+            .appendingPathComponent("RemoteInput", isDirectory: true)
         try? FileManager.default.createDirectory(at: dir, withIntermediateDirectories: true)
         return dir.appendingPathComponent("keymap.json")
     }

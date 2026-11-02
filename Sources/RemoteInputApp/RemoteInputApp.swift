@@ -10,7 +10,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
 }
 
 @main
-struct FireRemoteApp: App {
+struct RemoteInputApp: App {
     @NSApplicationDelegateAdaptor(AppDelegate.self) private var delegate
     @StateObject private var model = AppModel()
 
@@ -23,7 +23,7 @@ struct FireRemoteApp: App {
         }
         .menuBarExtraStyle(.window)
 
-        Window("Fire Remote", id: "settings") {
+        Window("Remote Input", id: "settings") {
             SettingsView(model: model)
                 .onAppear { delegate.model = model }
         }
