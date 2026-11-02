@@ -18,7 +18,7 @@ cat > "$APP/Contents/Info.plist" <<'P'
 <?xml version="1.0" encoding="UTF-8"?>
 <!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
 <plist version="1.0"><dict>
-<key>CFBundleIdentifier</key><string>io.github.potkc.remotio</string>
+<key>CFBundleIdentifier</key><string>io.github.todayporton.remotio</string>
 <key>CFBundleExecutable</key><string>Remotio</string>
 <key>CFBundleName</key><string>Remotio</string>
 <key>CFBundlePackageType</key><string>APPL</string>
