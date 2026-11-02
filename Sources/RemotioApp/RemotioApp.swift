@@ -19,7 +19,9 @@ struct RemotioApp: App {
             MenuContent(model: model)
                 .onAppear { delegate.model = model }
         } label: {
-            Image(systemName: model.micOn ? "mic.fill" : (model.connected ? "appletvremote.gen4" : "appletvremote.gen4.fill"))
+            Image(nsImage: MenuBarIcon.image(
+                symbolName: model.micOn ? "mic.fill" : (model.connected ? "appletvremote.gen4" : "appletvremote.gen4.fill")
+            ))
         }
         .menuBarExtraStyle(.window)
 
