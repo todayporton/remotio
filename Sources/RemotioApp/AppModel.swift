@@ -258,6 +258,7 @@ final class AppModel: ObservableObject {
 
     func shutdown() {
         releaseKeys()
+        KeyInjector.flush()
         session?.shutdown()
         if connected, let suppressor, !suppressor.clear() { log("元のキー入力の設定を戻せませんでした") }
         output?.stop()

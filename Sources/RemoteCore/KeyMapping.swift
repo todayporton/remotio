@@ -250,13 +250,27 @@ public enum KeyInjector {
     /// CGEventSource.keyState(.hidSystemState) で押下中と判定されるよう、HID の状態を持つソースから送る
     private static let source = CGEventSource(stateID: .hidSystemState)
 
+    /// イベントの間隔。修飾キーの直後に通常キーを送ると、システムの修飾キーの状態が更新される前に
+    /// 届き、状態を確認し直すアプリ(Amical など)で修飾キーが押されていないと判定されることがある。
+    private static let eventInterval: useconds_t = 40_000
+
+    private static let queue = DispatchQueue(label: "remotio.key-injector", qos: .userInteractive)
+
+    /// キューに積んで順に送る。呼び出し元(main スレッド)を待たせない。
     public static func post(_ action: KeyAction) {
-        for item in action.events {
-            guard let event = CGEvent(keyboardEventSource: source, virtualKey: item.keyCode,
-                                      keyDown: item.kind == .keyDown) else { continue }
-            if item.kind == .flagsChanged { event.type = .flagsChanged }
-            event.flags = CGEventFlags(rawValue: item.flags)
-            event.post(tap: .cghidEventTap)
+        let events = action.events
+        queue.async {
+            for (index, item) in events.enumerated() {
+                if index > 0 { usleep(eventInterval) }
+                guard let event = CGEvent(keyboardEventSource: source, virtualKey: item.keyCode,
+                                          keyDown: item.kind == .keyDown) else { continue }
+                if item.kind == .flagsChanged { event.type = .flagsChanged }
+                event.flags = CGEventFlags(rawValue: item.flags)
+                event.post(tap: .cghidEventTap)
+            }
         }
     }
+
+    /// 終了前に呼ぶ。キューに残ったキー操作を送り終えるまで待つ。
+    public static func flush() { queue.sync {} }
 }

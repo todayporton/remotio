@@ -277,6 +277,7 @@ func run(_ args: [String]) throws {
     }
     func finish() {
         router.releaseAll()
+        KeyInjector.flush()
         session.shutdown()
         if let suppressor, !suppressor.clear() { print("警告: 元のキー入力の設定を戻せませんでした") }
         output?.stop()
@@ -320,6 +321,7 @@ func sendKey(_ args: [String]) throws {
     }
     KeyInjector.post(KeyAction(combo: combo, isDown: true))
     KeyInjector.post(KeyAction(combo: combo, isDown: false))
+    KeyInjector.flush()
     print("送信: \(text)")
 }
 
