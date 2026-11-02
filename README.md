@@ -21,7 +21,14 @@ swift test
 .build/debug/fireremote listen                # Report とボタンイベントを表示
 .build/debug/fireremote record --out test     # 音声ボタンを押している間を録音
 .build/debug/fireremote decode captures/test.bin out.wav
+
+.build/debug/fireremote devices               # オーディオデバイスの一覧
+.build/debug/fireremote stream --device "BlackHole 2ch"   # 音声を指定デバイスへ出力
+.build/debug/fireremote replay captures/test.bin --device "BlackHole 2ch"   # 経路の検証用
+.build/debug/fireremote capture-input --device "BlackHole 2ch" --out in.wav # 経路の検証用
 ```
+
+`stream` の出力先は `--device` での指定が必須です。システムの既定デバイスは変更しません。他のアプリでは、入力デバイスとして BlackHole を選びます。
 
 `record` は音声ボタンを離すと終了し、`captures/` に `.wav` と生 Report の `.bin` を保存します。`captures/` には音声が残るため、Git の管理対象外にしています。
 
@@ -35,6 +42,9 @@ swift test
 | `Sources/RemoteCore/HIDReportDescriptor.swift` | HID Descriptor の解析 |
 | `Sources/RemoteCore/RemoteProfile.swift` | 機種ごとの差分(`RemoteProfile`)、ボタン判定、音声ボタンとマイクの連動 |
 | `Sources/RemoteCore/OpusDecoder.swift` | libopus のラッパー |
+| `Sources/RemoteCore/VoiceSession.swift` | ボタン監視、マイク連動、デコードのまとめ |
+| `Sources/RemoteCore/PCMOutput.swift` | 指定デバイスへの PCM 出力 |
+| `Sources/RemoteCore/AudioDevices.swift` | オーディオデバイスの列挙、検証用の入力録音 |
 | `Sources/RemoteCore/Files.swift` | WAV 書き出し、生 Report の記録、音声パケットの統計 |
 | `Sources/fireremote/main.swift` | CLI |
 
@@ -80,7 +90,8 @@ swift test
 - 欠落の値は到着時刻からの推定です。payload 内にシーケンス番号があるかは確認していません。
 - スリープ復帰と再接続は、コードはありますが動作を確認していません。
 - `--seize` は未検証です。
-- macOS の音声入力への接続(Phase 5)以降は未実装です。
+- `stream` / `replay` / `capture-input` は実装のみで、音声の出力は未検証です(BlackHole 未導入のため)。
+- キー割り当て(Phase 6)以降は未実装です。
 
 ## 参考
 

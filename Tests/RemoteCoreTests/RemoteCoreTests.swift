@@ -90,6 +90,17 @@ final class RemoteCoreTests: XCTestCase {
         XCTAssertEqual(Array(d[44...45]), [1, 0])
     }
 
+    func testAudioDeviceResolve() throws {
+        let list = [
+            AudioDeviceInfo(id: 1, uid: "BlackHole2ch_UID", name: "BlackHole 2ch", inputChannels: 2, outputChannels: 2),
+            AudioDeviceInfo(id: 2, uid: "BlackHole16ch_UID", name: "BlackHole 16ch", inputChannels: 16, outputChannels: 16),
+        ]
+        XCTAssertEqual(try AudioDevices.resolve("BlackHole2ch_UID", in: list).id, 1)
+        XCTAssertEqual(try AudioDevices.resolve("blackhole 16", in: list).id, 2)
+        XCTAssertThrowsError(try AudioDevices.resolve("BlackHole", in: list))
+        XCTAssertThrowsError(try AudioDevices.resolve("none", in: list))
+    }
+
     func testCaptureRoundTripAndStats() {
         var data = CaptureFile.encode(timestampNs: 1_000, reportID: 0xF0, payload: [0xB8, 1])
         data += CaptureFile.encode(timestampNs: 2_000, reportID: 0x02, payload: [])

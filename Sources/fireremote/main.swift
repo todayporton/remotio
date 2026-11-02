@@ -11,6 +11,13 @@ let usage = """
                             全 Report とボタンイベントを表示(マイクは操作しない)
   record [--out 名前] [--seconds N] [--seize]
                             音声ボタンを押している間を captures/名前.{bin,wav} に保存
+  devices                   オーディオデバイスの一覧を表示
+  stream --device 名前 [--seconds N] [--seize]
+                            音声ボタンを押している間の音声を指定デバイスへ出力
+  replay <入力.bin> --device 名前
+                            記録済みの音声を指定デバイスへ出力(経路の検証用)
+  capture-input --device 名前 --out 出力.wav [--seconds N]
+                            デバイスの入力を WAV に保存(経路の検証用)
   decode <入力.bin> <出力.wav> [--audio-report 0xF0]
                             記録済みの生 Report を WAV に変換
 """
@@ -40,8 +47,15 @@ func onSignal(_ handler: @escaping () -> Void) -> [DispatchSourceSignal] {
     }
 }
 
+func startOrExit(_ session: VoiceSession) {
+    startOrExit(session.start())
+}
+
 func startOrExit(_ remote: HIDRemote) {
-    let r = remote.start()
+    startOrExit(remote.start())
+}
+
+func startOrExit(_ r: IOReturn) {
     print("IOHIDManagerOpen: \(ioReturnDescription(r))")
     if r != kIOReturnSuccess {
         print("入力監視の権限: \(accessDescription(IOHIDCheckAccess(kIOHIDRequestTypeListenEvent)))")
@@ -110,74 +124,145 @@ func record(_ args: [String]) throws {
     FileManager.default.createFile(atPath: binURL.path, contents: nil)
     let bin = try FileHandle(forWritingTo: binURL)
     let wav = try WAVWriter(url: wavURL)
-    let decoder = try OpusDecoder()
-
-    let remote = HIDRemote(profile: FireTVRemoteProfile(), seize: args.contains("--seize"))
-    var tracker = ButtonTracker(profile: remote.profile)
-    var voice = VoiceController(voiceButton: remote.profile.voiceButtonName)
-    var stats = AudioStats()
+    let session = try VoiceSession(profile: FireTVRemoteProfile(), seize: args.contains("--seize"))
 
     func finish() {
-        if voice.micEnabled {
-            remote.setMic(enabled: false) { _ in }
-            remote.flushWrites()
-        }
+        session.shutdown()
         try? bin.close()
         try? wav.close()
-        print("統計: \(stats.summary)")
+        print("統計: \(session.stats.summary)")
         print(String(format: "WAV: %@ (%.2f秒)", wavURL.path, Double(wav.sampleCount) / 16_000))
         print("生Report: \(binURL.path)")
-        exit(stats.packets > 0 ? 0 : 1)
+        exit(session.stats.packets > 0 ? 0 : 1)
     }
 
-    remote.onConnect = { _ in
-        if let v = remote.voiceReports {
-            print(String(format: "[接続] audio=0x%02X micEnable=0x%02X", v.audioReportID, v.micEnableReportID))
-        } else {
-            print("[接続] Descriptor から音声 Report を特定できません")
-        }
-    }
-    remote.onDisconnect = { print("[切断]") }
-    remote.onReport = { report in
+    session.onLog = { print($0) }
+    session.onReport = { report in
         try? bin.write(contentsOf: CaptureFile.encode(timestampNs: report.timestampNs,
                                                       reportID: report.reportID, payload: report.payload))
-        if report.reportID == remote.voiceReports?.audioReportID {
-            var failed = false
-            do { try wav.append(try decoder.decode(report.payload)) } catch {
-                failed = true
-                print("デコード失敗: \(error)")
-            }
-            if stats.packets == 0 { print("音声受信開始 先頭: \(hex(Array(report.payload.prefix(8))))") }
-            stats.record(timestampNs: report.timestampNs, payload: report.payload, decodeFailed: failed)
-            return
-        }
-        print(String(format: "report 0x%02X %@", report.reportID, hex(report.payload)))
-        for event in tracker.process(reportID: report.reportID, payload: report.payload) {
-            print("  \(event.isDown ? "押下" : "解放"): \(event.name)")
-            guard let enable = voice.process(event) else { continue }
-            remote.setMic(enabled: enable) { r in
-                print("  マイク\(enable ? "有効化" : "停止"): \(ioReturnDescription(r))")
-            }
-            if enable {
-                let before = stats.packets
-                DispatchQueue.main.asyncAfter(deadline: .now() + 1.5) {
-                    if voice.micEnabled && stats.packets == before {
-                        print("  警告: マイク有効化から1.5秒経っても音声 Report が届きません")
-                    }
-                }
-            } else {
-                // 停止後に届く残りを受けてから終了する
-                DispatchQueue.main.asyncAfter(deadline: .now() + 0.5) { finish() }
-            }
-        }
+    }
+    session.onPCM = { try? wav.append($0) }
+    session.onMicChange = { enabled in
+        // 停止後に届く残りを受けてから終了する
+        if !enabled { DispatchQueue.main.asyncAfter(deadline: .now() + 0.5) { finish() } }
     }
 
-    startOrExit(remote)
+    startOrExit(session)
     let signals = onSignal { finish() }
     _ = signals
     let seconds = option("--seconds", in: args).flatMap(Double.init) ?? 60
     DispatchQueue.main.asyncAfter(deadline: .now() + seconds) { finish() }
     print("音声ボタンを押している間だけ録音します(最大\(Int(seconds))秒待機)。")
+    CFRunLoopRun()
+}
+
+func outputDevice(_ args: [String]) throws -> AudioDeviceInfo {
+    guard let query = option("--device", in: args) else {
+        print("--device で出力先を指定してください(一覧: fireremote devices)")
+        exit(64)
+    }
+    return try AudioDevices.resolve(query, in: AudioDevices.all())
+}
+
+func devices() {
+    let defaultIn = AudioDevices.defaultDevice(input: true)
+    let defaultOut = AudioDevices.defaultDevice(input: false)
+    for d in AudioDevices.all() {
+        let marks = (d.id == defaultIn ? " [既定入力]" : "") + (d.id == defaultOut ? " [既定出力]" : "")
+        print("\(d.name)  in=\(d.inputChannels) out=\(d.outputChannels)  uid=\(d.uid)\(marks)")
+    }
+}
+
+/// 既定デバイスを変更していないことを終了時に確認する。
+func defaultsSnapshot() -> () -> Void {
+    let before = (AudioDevices.defaultDevice(input: true), AudioDevices.defaultDevice(input: false))
+    return {
+        let unchanged = before == (AudioDevices.defaultDevice(input: true), AudioDevices.defaultDevice(input: false))
+        print("既定の入出力デバイス: \(unchanged ? "変更なし" : "変更あり(想定外)")")
+    }
+}
+
+func stream(_ args: [String]) throws {
+    let device = try outputDevice(args)
+    let output = try PCMOutput(device: device)
+    let session = try VoiceSession(profile: FireTVRemoteProfile(), seize: args.contains("--seize"))
+    let checkDefaults = defaultsSnapshot()
+    try output.start()
+
+    func finish() {
+        session.shutdown()
+        output.stop()
+        print("統計: \(session.stats.summary)")
+        checkDefaults()
+        exit(0)
+    }
+
+    session.onLog = { print($0) }
+    session.onPCM = { output.enqueue($0) }
+    session.onMicChange = { enabled in
+        if enabled { output.beginSession() } else { output.endSession() }
+    }
+
+    startOrExit(session)
+    let signals = onSignal { finish() }
+    _ = signals
+    if let s = option("--seconds", in: args).flatMap(Double.init) {
+        DispatchQueue.main.asyncAfter(deadline: .now() + s) { finish() }
+    }
+    print("出力先: \(device.name)。音声ボタンを押している間だけ送ります。Ctrl-C で終了します。")
+    CFRunLoopRun()
+}
+
+/// 記録済みの音声を実際の到着間隔で出力する。リモコンなしで音声経路を検証するために使う。
+func replay(_ args: [String]) throws {
+    guard let path = args.first, !path.hasPrefix("--") else {
+        print(usage)
+        exit(64)
+    }
+    let device = try outputDevice(args)
+    let output = try PCMOutput(device: device)
+    let decoder = try OpusDecoder()
+    let packets = CaptureFile.decode(try Data(contentsOf: URL(fileURLWithPath: path))).filter { $0.reportID == 0xF0 }
+    guard let first = packets.first else {
+        print("音声 Report がありません")
+        exit(1)
+    }
+    let checkDefaults = defaultsSnapshot()
+    try output.start()
+    output.beginSession()
+    for p in packets {
+        let pcm = try decoder.decode(p.payload)
+        let delay = Double(p.timestampNs - first.timestampNs) / 1e9
+        DispatchQueue.main.asyncAfter(deadline: .now() + delay) { output.enqueue(pcm) }
+    }
+    let span = Double(packets.last!.timestampNs - first.timestampNs) / 1e9
+    DispatchQueue.main.asyncAfter(deadline: .now() + span + 0.5) {
+        output.stop()
+        print(String(format: "%d パケットを %@ へ出力(%.2f秒)", packets.count, device.name, span))
+        checkDefaults()
+        exit(0)
+    }
+    CFRunLoopRun()
+}
+
+func captureInput(_ args: [String]) throws {
+    guard let query = option("--device", in: args), let out = option("--out", in: args) else {
+        print(usage)
+        exit(64)
+    }
+    let device = try AudioDevices.resolve(query, in: AudioDevices.all())
+    let recorder = try DeviceInputRecorder(device: device, url: URL(fileURLWithPath: out))
+    let status = recorder.start()
+    guard status == noErr else {
+        print("入力の開始に失敗: OSStatus \(status)")
+        exit(1)
+    }
+    let seconds = option("--seconds", in: args).flatMap(Double.init) ?? 5
+    DispatchQueue.main.asyncAfter(deadline: .now() + seconds) {
+        do { try recorder.stop() } catch { print("エラー: \(error)") }
+        print("保存: \(out)")
+        exit(0)
+    }
     CFRunLoopRun()
 }
 
@@ -211,6 +296,10 @@ do {
     case "listen": listen(Array(args.dropFirst()))
     case "record": try record(Array(args.dropFirst()))
     case "decode": try decode(Array(args.dropFirst()))
+    case "devices": devices()
+    case "stream": try stream(Array(args.dropFirst()))
+    case "replay": try replay(Array(args.dropFirst()))
+    case "capture-input": try captureInput(Array(args.dropFirst()))
     default:
         print(usage)
         exit(64)
