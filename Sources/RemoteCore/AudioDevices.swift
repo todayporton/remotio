@@ -80,6 +80,14 @@ public enum AudioDevices {
         return id
     }
 
+    public static func actualSampleRate(_ id: AudioDeviceID) -> Double {
+        var addr = address(kAudioDevicePropertyActualSampleRate)
+        var rate: Float64 = 0
+        var size = UInt32(MemoryLayout<Float64>.size)
+        AudioObjectGetPropertyData(id, &addr, 0, nil, &size, &rate)
+        return rate
+    }
+
     public static func nominalSampleRate(_ id: AudioDeviceID) -> Double {
         var addr = address(kAudioDevicePropertyNominalSampleRate)
         var rate: Float64 = 0

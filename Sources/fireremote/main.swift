@@ -27,6 +27,12 @@ func option(_ name: String, in args: [String]) -> String? {
     return args[i + 1]
 }
 
+func timestamp() -> String {
+    let f = DateFormatter()
+    f.dateFormat = "HH:mm:ss.SSS"
+    return f.string(from: Date())
+}
+
 func hex(_ bytes: [UInt8]) -> String { bytes.map { String(format: "%02x", $0) }.joined() }
 
 func accessDescription(_ a: IOHIDAccessType) -> String {
@@ -174,11 +180,19 @@ func devices() {
 }
 
 /// 既定デバイスを変更していないことを終了時に確認する。
+/// Bluetooth 機器は再接続で数値 ID が変わるため UID で比較する。
 func defaultsSnapshot() -> () -> Void {
-    let before = (AudioDevices.defaultDevice(input: true), AudioDevices.defaultDevice(input: false))
+    func current() -> [String] {
+        let all = AudioDevices.all()
+        return [true, false].map { input in
+            let id = AudioDevices.defaultDevice(input: input)
+            return all.first { $0.id == id }?.uid ?? "不明"
+        }
+    }
+    let before = current()
     return {
-        let unchanged = before == (AudioDevices.defaultDevice(input: true), AudioDevices.defaultDevice(input: false))
-        print("既定の入出力デバイス: \(unchanged ? "変更なし" : "変更あり(想定外)")")
+        let after = current()
+        print("既定の入出力デバイス: \(before == after ? "変更なし" : "変更あり \(before) -> \(after)")")
     }
 }
 
@@ -197,7 +211,7 @@ func stream(_ args: [String]) throws {
         exit(0)
     }
 
-    session.onLog = { print($0) }
+    session.onLog = { print("\(timestamp()) \($0)") }
     session.onPCM = { output.enqueue($0) }
     session.onMicChange = { enabled in
         if enabled { output.beginSession() } else { output.endSession() }
@@ -259,6 +273,7 @@ func captureInput(_ args: [String]) throws {
     }
     let seconds = option("--seconds", in: args).flatMap(Double.init) ?? 5
     DispatchQueue.main.asyncAfter(deadline: .now() + seconds) {
+        print("nominal=\(AudioDevices.nominalSampleRate(device.id)) actual=\(AudioDevices.actualSampleRate(device.id))")
         do { try recorder.stop() } catch { print("エラー: \(error)") }
         print("保存: \(out)")
         exit(0)
