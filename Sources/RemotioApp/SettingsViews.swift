@@ -446,9 +446,9 @@ struct ConnectionPage: View {
                     }
                     Card {
                         VStack(alignment: .leading, spacing: 12) {
-                            Text("音声の出力先").font(.headline)
+                            Text("リモコンの音声の送り先").font(.headline)
                             HStack {
-                                Picker("出力先", selection: $model.selectedDeviceUID) {
+                                Picker("送り先", selection: $model.selectedDeviceUID) {
                                     Text("なし").tag(String?.none)
                                     ForEach(model.outputDevices, id: \.uid) {
                                         Text($0.name).tag(String?.some($0.uid))
@@ -480,7 +480,7 @@ struct ConnectionPage: View {
 
     private var driverStatus: String {
         if model.driverInstalled && model.driverDeviceAvailable {
-            return "使用できます。音声入力を使うアプリで、入力に「Remotio Microphone」を選んでください。"
+            return "使用できます。下の送り先を「Remotio Microphone」にして、音声入力を使うアプリの入力にも同じものを選びます。システムの出力には設定しないでください。"
         }
         if model.driverInstalled {
             return "インストール済みですが、デバイスが見つかりません。Mac を再起動すると認識される場合があります。"
@@ -490,10 +490,10 @@ struct ConnectionPage: View {
 
     private var outputHint: String {
         if model.selectedDeviceUID == nil {
-            return "他のアプリのマイクとして使うには、「Remotio Microphone」を選びます。"
+            return "他のアプリのマイクとして使うには、「Remotio Microphone」を選びます。今はリモコンの音声をどこにも送っていません。"
         }
         if model.hasVirtualDeviceSelected {
-            return "使うアプリの入力に、同じデバイスを選んでください。"
+            return "音声入力を使うアプリの入力に、同じデバイスを選んでください。"
         }
         return "このデバイスには入力がありません。音声はスピーカーなどから再生されます。"
     }

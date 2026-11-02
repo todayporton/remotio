@@ -34,6 +34,7 @@ final class AppModel: ObservableObject {
     private var output: PCMOutput?
     private var router: ButtonKeyRouter?
     private var suppressor: KeySuppressor?
+    private var selectMicrophoneAfterInstall = false
 
     private var keymapURL: URL {
         let dir = FileManager.default.urls(for: .applicationSupportDirectory, in: .userDomainMask)[0]
@@ -149,6 +150,11 @@ final class AppModel: ObservableObject {
         outputDevices = AudioDevices.all().filter { $0.outputChannels > 0 }
         driverInstalled = DriverInstaller.isInstalled
         driverDeviceAvailable = outputDevices.contains { $0.uid == DriverInstaller.deviceUID }
+        // インストールを選んだときは、それまでの送り先(BlackHole など)から切り替える
+        if selectMicrophoneAfterInstall && driverDeviceAvailable {
+            selectMicrophoneAfterInstall = false
+            selectedDeviceUID = DriverInstaller.deviceUID
+        }
         selectBuiltInMicrophoneIfNeeded()
         // Core Audio の再起動後などに、選択中のデバイスへ出力し直す
         if output == nil, let uid = selectedDeviceUID, outputDevices.contains(where: { $0.uid == uid }) {
@@ -164,7 +170,11 @@ final class AppModel: ObservableObject {
         selectedDeviceUID = DriverInstaller.deviceUID
     }
 
-    func installDriver() { runDriverTask(DriverInstaller.install) }
+    func installDriver() {
+        selectMicrophoneAfterInstall = true
+        runDriverTask(DriverInstaller.install)
+    }
+
     func uninstallDriver() {
         if selectedDeviceUID == DriverInstaller.deviceUID { selectedDeviceUID = nil }
         runDriverTask(DriverInstaller.uninstall)
@@ -179,6 +189,7 @@ final class AppModel: ObservableObject {
             let error = task()
             DispatchQueue.main.async {
                 self?.driverError = error
+                if error != nil { self?.selectMicrophoneAfterInstall = false }
                 if let error { self?.log("ドライバの処理に失敗: \(error)") }
                 self?.waitForAudioSystem(attemptsLeft: 10)
             }
