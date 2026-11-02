@@ -1,6 +1,48 @@
+import AppKit
 import ApplicationServices
 import CoreGraphics
 import Foundation
+
+/// メニューから選べる操作の一覧。設定には media:xxx / system:xxx の形で保存する。
+public enum ActionCatalog {
+    public struct Item: Identifiable, Sendable {
+        public let id: String
+        public let title: String
+    }
+
+    /// メディアキー(NX_KEYTYPE の値)
+    static let mediaKeys: [String: (title: String, key: Int32)] = [
+        "play_pause": ("再生・停止", 16), "next": ("次へ", 17), "previous": ("前へ", 18),
+        "fast_forward": ("早送り", 19), "rewind": ("巻き戻し", 20),
+        "volume_up": ("音量を上げる", 0), "volume_down": ("音量を下げる", 1), "mute": ("ミュート", 7),
+        "brightness_up": ("画面を明るく", 2), "brightness_down": ("画面を暗く", 3),
+    ]
+
+    /// macOS の既定のショートカットで実行する操作
+    static let systemActions: [String: (title: String, combo: String)] = [
+        "mission_control": ("Mission Control", "ctrl+up"),
+        "app_windows": ("アプリケーションウインドウ", "ctrl+down"),
+        "space_left": ("左の操作スペース", "ctrl+left"),
+        "space_right": ("右の操作スペース", "ctrl+right"),
+        "show_desktop": ("デスクトップを表示", "f11"),
+        "spotlight": ("Spotlight", "cmd+space"),
+        "screenshot": ("スクリーンショット", "shift+cmd+5"),
+        "lock_screen": ("画面をロック", "ctrl+cmd+q"),
+    ]
+
+    public static let mediaItems: [Item] = [
+        "play_pause", "next", "previous", "fast_forward", "rewind",
+        "volume_up", "volume_down", "mute", "brightness_up", "brightness_down",
+    ].map { Item(id: "media:\($0)", title: mediaKeys[$0]!.title) }
+
+    public static let systemItems: [Item] = [
+        "mission_control", "app_windows", "space_left", "space_right",
+        "show_desktop", "spotlight", "screenshot", "lock_screen",
+    ].map { Item(id: "system:\($0)", title: systemActions[$0]!.title) }
+
+    /// 何もしない(Mac の標準動作も止める)
+    public static let disabled = "none"
+}
 
 public enum KeyMapError: Error, CustomStringConvertible, Equatable {
     case unknownKey(String)
@@ -16,6 +58,8 @@ public struct KeyCombo: Equatable, Sendable {
     public let keyCode: CGKeyCode
     public let flags: UInt64
     public let text: String
+    /// メディアキーのとき、その NX_KEYTYPE の値
+    public let mediaKey: Int32?
     /// 修飾キー単体のとき、そのキーのフラグ(Push-to-Talk で Fn などを押し続けるために使う)
     public let modifierOnlyFlag: UInt64?
 
@@ -58,6 +102,23 @@ public struct KeyCombo: Equatable, Sendable {
     }()
 
     public init(_ text: String) throws {
+        let lowered = text.lowercased()
+        if lowered.hasPrefix("system:") {
+            guard let action = ActionCatalog.systemActions[String(lowered.dropFirst(7))] else {
+                throw KeyMapError.unknownKey(text)
+            }
+            let resolved = try KeyCombo(action.combo)
+            self.init(keyCode: resolved.keyCode, flags: resolved.flags, text: lowered,
+                      mediaKey: nil, modifierOnlyFlag: resolved.modifierOnlyFlag)
+            return
+        }
+        if lowered.hasPrefix("media:") {
+            guard let media = ActionCatalog.mediaKeys[String(lowered.dropFirst(6))] else {
+                throw KeyMapError.unknownKey(text)
+            }
+            self.init(keyCode: 0, flags: 0, text: lowered, mediaKey: media.key, modifierOnlyFlag: nil)
+            return
+        }
         var parts = text.lowercased().split(separator: "+").map { $0.trimmingCharacters(in: .whitespaces) }
         guard let keyName = parts.popLast() else { throw KeyMapError.unknownKey(text) }
         var flags: CGEventFlags = []
@@ -66,16 +127,21 @@ public struct KeyCombo: Equatable, Sendable {
             flags.insert(modifier)
         }
         if parts.isEmpty, let modifier = Self.modifierOnlyKeys[keyName] {
-            keyCode = modifier.code
-            modifierOnlyFlag = modifier.flag.rawValue
+            self.init(keyCode: modifier.code, flags: flags.rawValue, text: lowered,
+                      mediaKey: nil, modifierOnlyFlag: modifier.flag.rawValue)
         } else if let code = Self.keys[keyName] {
-            keyCode = code
-            modifierOnlyFlag = nil
+            self.init(keyCode: code, flags: flags.rawValue, text: lowered, mediaKey: nil, modifierOnlyFlag: nil)
         } else {
             throw KeyMapError.unknownKey(text)
         }
-        self.flags = flags.rawValue
-        self.text = text.lowercased()
+    }
+
+    private init(keyCode: CGKeyCode, flags: UInt64, text: String, mediaKey: Int32?, modifierOnlyFlag: UInt64?) {
+        self.keyCode = keyCode
+        self.flags = flags
+        self.text = text
+        self.mediaKey = mediaKey
+        self.modifierOnlyFlag = modifierOnlyFlag
     }
 
     /// 物理キーのキーコードと修飾フラグから、設定用の文字列を作る(キー入力の記録に使う)。
@@ -97,6 +163,14 @@ public struct KeyCombo: Equatable, Sendable {
 
     /// 画面表示用の文字列(例: cmd+shift+p → ⌘⇧P)
     public static func displayText(_ text: String) -> String {
+        let lowered = text.lowercased()
+        if lowered == ActionCatalog.disabled { return "無効" }
+        if lowered.hasPrefix("media:"), let item = ActionCatalog.mediaKeys[String(lowered.dropFirst(6))] {
+            return item.title
+        }
+        if lowered.hasPrefix("system:"), let item = ActionCatalog.systemActions[String(lowered.dropFirst(7))] {
+            return item.title
+        }
         let symbols = [
             "cmd": "⌘", "shift": "⇧", "opt": "⌥", "alt": "⌥", "ctrl": "⌃", "fn": "fn",
             "rcmd": "右⌘", "rshift": "右⇧", "ropt": "右⌥", "rctrl": "右⌃",
@@ -109,17 +183,26 @@ public struct KeyCombo: Equatable, Sendable {
     }
 }
 
-/// ボタン名からキーへの割り当て。JSON は {"dpad_up": "up", "play_pause": "cmd+shift+p"} の形式。
+/// ボタン名から操作への割り当て。JSON は {"dpad_up": "up", "mute": "none", "tv": "media:play_pause"} の形式。
+/// 指定のないボタンは、Mac の標準動作をそのまま通す。
 public struct KeyMap: Sendable {
     public let bindings: [String: KeyCombo]
+    /// "none" を指定したボタン(標準動作も止める)
+    public let disabledButtons: Set<String>
 
     public static let defaultBindings = [
         "dpad_up": "up", "dpad_down": "down", "dpad_left": "left", "dpad_right": "right",
-        "select": "return", "back": "escape", "play_pause": "space",
+        "select": "return", "back": "escape",
     ]
 
+    /// Mac へ届く元のキー入力を止めるボタン
+    public var suppressedButtons: [String] { Array(bindings.keys) + Array(disabledButtons) }
+
     public init(_ bindings: [String: String]) throws {
-        self.bindings = try bindings.mapValues { try KeyCombo($0) }
+        disabledButtons = Set(bindings.filter { $0.value.lowercased() == ActionCatalog.disabled }.keys)
+        self.bindings = try bindings
+            .filter { $0.value.lowercased() != ActionCatalog.disabled }
+            .mapValues { try KeyCombo($0) }
     }
 
     public static func load(url: URL) throws -> KeyMap {
@@ -217,6 +300,7 @@ public extension KeyAction {
     /// キーの状態を flagsChanged で追跡するアプリがあるため、修飾キーも個別のイベントとして送る。
     /// 例: ctrl+t の押下は ctrl(flagsChanged) → t(keyDown)、解放は t(keyUp) → ctrl(flagsChanged)。
     var events: [InjectedKeyEvent] {
+        if combo.mediaKey != nil { return [] }
         if let flag = combo.modifierOnlyFlag {
             return [InjectedKeyEvent(kind: .flagsChanged, keyCode: combo.keyCode, flags: isDown ? flag : 0)]
         }
@@ -259,7 +343,10 @@ public enum KeyInjector {
     /// キューに積んで順に送る。呼び出し元(main スレッド)を待たせない。
     public static func post(_ action: KeyAction) {
         let events = action.events
+        let mediaKey = action.combo.mediaKey
+        let isDown = action.isDown
         queue.async {
+            if let mediaKey { postMediaKey(mediaKey, isDown: isDown) }
             for (index, item) in events.enumerated() {
                 if index > 0 { usleep(eventInterval) }
                 guard let event = CGEvent(keyboardEventSource: source, virtualKey: item.keyCode,
@@ -269,6 +356,17 @@ public enum KeyInjector {
                 event.post(tap: .cghidEventTap)
             }
         }
+    }
+
+    /// メディアキーはキーボードイベントではなく、システム定義のイベントとして送る
+    private static func postMediaKey(_ key: Int32, isDown: Bool) {
+        let state = isDown ? 0xA : 0xB
+        let event = NSEvent.otherEvent(
+            with: .systemDefined, location: .zero,
+            modifierFlags: NSEvent.ModifierFlags(rawValue: UInt(state) << 8),
+            timestamp: 0, windowNumber: 0, context: nil, subtype: 8,
+            data1: Int(key) << 16 | state << 8, data2: -1)
+        event?.cgEvent?.post(tap: .cghidEventTap)
     }
 
     /// 終了前に呼ぶ。キューに残ったキー操作を送り終えるまで待つ。

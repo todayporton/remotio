@@ -270,7 +270,7 @@ func run(_ args: [String]) throws {
     }
 
     let session = try VoiceSession(profile: profile)
-    let suppressor = args.contains("--no-suppress") ? nil : KeySuppressor(profile: profile, buttons: Array(map.bindings.keys) + [profile.voiceButtonName])
+    let suppressor = args.contains("--no-suppress") ? nil : KeySuppressor(profile: profile, buttons: map.suppressedButtons + [profile.voiceButtonName])
     let router = ButtonKeyRouter(map: map, voiceButton: profile.voiceButtonName) { action in
         print("\(timestamp()) キー\(action.isDown ? "押下" : "解放"): \(action.combo.text)\(dryRun ? " (dry-run)" : "")")
         if !dryRun { KeyInjector.post(action) }

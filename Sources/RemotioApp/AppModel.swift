@@ -124,7 +124,7 @@ final class AppModel: ObservableObject {
         do {
             let map = try KeyMap(bindings)
             router = ButtonKeyRouter(map: map, voiceButton: profile.voiceButtonName) { [weak self] in self?.post($0) }
-            suppressor = KeySuppressor(profile: profile, buttons: Array(map.bindings.keys) + [profile.voiceButtonName])
+            suppressor = KeySuppressor(profile: profile, buttons: map.suppressedButtons + [profile.voiceButtonName])
         } catch {
             keymapError = "\(error)"
         }
@@ -238,6 +238,11 @@ final class AppModel: ObservableObject {
         var edited = bindings
         edited[button] = key
         save(edited)
+    }
+
+    /// Mac の標準動作があるボタンか(音声ボタンは常に止めるので含めない)
+    func hasStandardAction(_ button: String) -> Bool {
+        button != profile.voiceButtonName && profile.systemUsage(of: button) != nil
     }
 
     func restoreDefaultBindings() { save(KeyMap.defaultBindings) }

@@ -260,7 +260,7 @@ struct ButtonsPage: View {
                     selected = id
                     startRecording(id)
                 }
-                .frame(width: 112, height: 540)
+                .frame(width: 112, height: 490)
                 .padding(.top, 14)
                 column(RemoteButton.right)
             }
@@ -289,28 +289,55 @@ struct ButtonsPage: View {
                 Image(systemName: button.symbol).frame(width: 20).foregroundStyle(.secondary)
                 Text(button.title).font(.callout.weight(.medium)).lineLimit(1)
                 Spacer(minLength: 4)
-                Button {
-                    selected = button.id
-                    isRecording ? stopRecording() : startRecording(button.id)
-                } label: {
-                    Text(isRecording ? "キーを入力…" : (binding.map(KeyCombo.displayText) ?? "未設定"))
-                        .font(.body.weight(.medium))
-                        .lineLimit(1)
-                        .frame(minWidth: 72)
-                }
-                .accessibilityLabel("\(button.title) のキー")
-                .accessibilityValue(binding ?? "未設定")
-                if binding != nil && !isRecording {
-                    Button {
-                        model.setBinding(button.id, to: nil)
-                    } label: {
-                        Image(systemName: "xmark.circle.fill").foregroundStyle(.secondary)
-                    }
-                    .buttonStyle(.plain)
-                    .accessibilityLabel("\(button.title) の割り当てを解除")
+                if isRecording {
+                    Button("キーを入力…", action: stopRecording)
+                        .frame(minWidth: 84)
+                        .accessibilityLabel("\(button.title) のキー入力を中止")
+                } else {
+                    actionMenu(button, binding: binding)
                 }
             }
         }
+    }
+
+    private func actionMenu(_ button: RemoteButton, binding: String?) -> some View {
+        Menu {
+            Button("キーを入力…") {
+                selected = button.id
+                startRecording(button.id)
+            }
+            Divider()
+            Button(unassignedTitle(button)) { model.setBinding(button.id, to: nil) }
+            Button("無効") { model.setBinding(button.id, to: ActionCatalog.disabled) }
+            Divider()
+            Menu("メディア操作") {
+                ForEach(ActionCatalog.mediaItems) { item in
+                    Button(item.title) { model.setBinding(button.id, to: item.id) }
+                }
+            }
+            Menu("システム操作") {
+                ForEach(ActionCatalog.systemItems) { item in
+                    Button(item.title) { model.setBinding(button.id, to: item.id) }
+                }
+            }
+        } label: {
+            Text(binding.map(KeyCombo.displayText) ?? unassignedTitle(button))
+                .font(.body.weight(.medium))
+                .lineLimit(1)
+        }
+        .menuStyle(.borderlessButton)
+        .fixedSize()
+        .padding(.horizontal, 8)
+        .padding(.vertical, 3)
+        .background(Color.primary.opacity(0.07), in: RoundedRectangle(cornerRadius: 6))
+        .accessibilityLabel("\(button.title) の操作")
+        .accessibilityValue(binding ?? unassignedTitle(button))
+    }
+
+    /// 何も割り当てていないときの表示。Mac 側の動作に合わせる
+    private func unassignedTitle(_ button: RemoteButton) -> String {
+        if button.id == "voice" { return "キーなし" }
+        return model.hasStandardAction(button.id) ? "標準" : "割り当てなし"
     }
 
     private var leaderLines: some View {
@@ -343,7 +370,7 @@ struct ButtonsPage: View {
                     Text("「\(name)」に割り当てるキーを押してください。修飾キーだけ(Fn、右 ⌥ など)も押して離すと設定できます。")
                         .font(.callout)
                 } else {
-                    Text("カードかリモコン図のボタンをクリックして、割り当てるキーを押します。音声ボタンは、押している間マイクが動き、割り当てたキーも押され続けます。")
+                    Text("各ボタンのメニューから操作を選びます。「標準」は Mac の標準動作をそのまま通し、「無効」は何もしません。音声ボタンは、押している間マイクが動き、割り当てたキーも押され続けます。")
                         .font(.callout).foregroundStyle(.secondary)
                 }
                 Spacer()

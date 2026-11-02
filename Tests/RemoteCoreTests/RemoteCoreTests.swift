@@ -114,6 +114,34 @@ final class RemoteCoreTests: XCTestCase {
         XCTAssertEqual(try KeyCombo("shift+cmd+p").keyCode, 35)
     }
 
+    func testActionsAndDisabledButtons() throws {
+        let map = try KeyMap(["mute": "none", "tv": "media:play_pause", "home": "system:mission_control"])
+        XCTAssertEqual(map.disabledButtons, ["mute"])
+        XCTAssertNil(map.bindings["mute"])
+        XCTAssertEqual(Set(map.suppressedButtons), ["mute", "tv", "home"])
+
+        let media = try XCTUnwrap(map.bindings["tv"])
+        XCTAssertEqual(media.mediaKey, 16)
+        XCTAssertEqual(KeyAction(combo: media, isDown: true).events, [])
+
+        let system = try XCTUnwrap(map.bindings["home"])
+        XCTAssertEqual(system.keyCode, 126)
+        XCTAssertEqual(system.flags, CGEventFlags.maskControl.rawValue)
+        XCTAssertEqual(system.text, "system:mission_control")
+
+        XCTAssertEqual(KeyCombo.displayText("none"), "無効")
+        XCTAssertEqual(KeyCombo.displayText("media:mute"), "ミュート")
+        XCTAssertEqual(KeyCombo.displayText("system:spotlight"), "Spotlight")
+        XCTAssertThrowsError(try KeyCombo("media:nosuch"))
+        XCTAssertThrowsError(try KeyCombo("system:nosuch"))
+
+        // 一覧の項目はすべて読み込める
+        for item in ActionCatalog.mediaItems + ActionCatalog.systemItems {
+            XCTAssertNoThrow(try KeyCombo(item.id), item.id)
+        }
+        XCTAssertNil(KeyMap.defaultBindings["play_pause"])
+    }
+
     func testInjectedEventOrder() throws {
         let ctrl = CGEventFlags.maskControl.rawValue
         let cmd = CGEventFlags.maskCommand.rawValue

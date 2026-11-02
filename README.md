@@ -62,7 +62,7 @@ swift test
 .build/debug/remotio run --config keymap.json           # 割り当てを変更
 ```
 
-既定の割り当ては、方向キーが矢印、決定が Return、戻るが Escape、再生・停止が Space です。音声ボタンにもキーを割り当てられます。押している間はマイクが動き、キーも押され続けます。キーの解放は話し終わりの音声が届くよう 120ms 遅らせます。修飾キーだけの指定(`fn`、`ropt` など)もできます。`keymap.json` の例: `{"voice": "fn", "play_pause": "cmd+shift+p"}`。キー送信にはアクセシビリティの権限が必要です。`run` は割り当てたボタンと音声ボタンの元のキー入力を、`stream` は音声ボタン(Mac では Spotlight が開く)の元のキー入力を、`hidutil` の `UserKeyMapping` で対象リモコンに限って止めます(`--no-suppress` で無効)。
+既定の割り当ては、方向キーが矢印、決定が Return、戻るが Escape です。指定のないボタンは Mac の標準動作をそのまま通します。`none` で無効、`media:play_pause` などでメディア操作、`system:mission_control` などでシステム操作を指定できます。音声ボタンにもキーを割り当てられます。押している間はマイクが動き、キーも押され続けます。キーの解放は話し終わりの音声が届くよう 120ms 遅らせます。修飾キーだけの指定(`fn`、`ropt` など)もできます。`keymap.json` の例: `{"voice": "fn", "play_pause": "cmd+shift+p"}`。キー送信にはアクセシビリティの権限が必要です。`run` は割り当てたボタンと音声ボタンの元のキー入力を、`stream` は音声ボタン(Mac では Spotlight が開く)の元のキー入力を、`hidutil` の `UserKeyMapping` で対象リモコンに限って止めます(`--no-suppress` で無効)。
 
 `stream` の出力先は `--device` での指定が必須です。システムの既定デバイスは変更しません。他のアプリでは、入力デバイスとして Remotio Microphone を選びます。
 
