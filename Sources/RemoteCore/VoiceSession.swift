@@ -66,7 +66,10 @@ public final class VoiceSession {
         for event in tracker.process(reportID: report.reportID, payload: report.payload) {
             onLog?("\(event.isDown ? "押下" : "解放"): \(event.name)")
             guard let enable = voice.process(event) else { continue }
-            if enable, let fresh = try? OpusDecoder() { decoder = fresh }
+            if enable {
+                if let fresh = try? OpusDecoder() { decoder = fresh }
+                stats.beginSession()
+            }
             remote.setMic(enabled: enable) { [unowned self] r in
                 onLog?("マイク\(enable ? "有効化" : "停止"): \(ioReturnDescription(r))")
             }

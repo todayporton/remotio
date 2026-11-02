@@ -115,5 +115,17 @@ final class RemoteCoreTests: XCTestCase {
             stats.record(timestampNs: ms * 1_000_000, payload: [0xB8], decodeFailed: false)
         }
         XCTAssertEqual(stats.estimatedLostPackets, 2)
+
+        // 発話の間の無音は欠落にも最大間隔にも数えない
+        var sessions = AudioStats()
+        for start: UInt64 in [0, 5_000] {
+            sessions.beginSession()
+            for ms: UInt64 in [0, 20, 40] {
+                sessions.record(timestampNs: (start + ms) * 1_000_000, payload: [0xB8], decodeFailed: false)
+            }
+        }
+        XCTAssertEqual(sessions.estimatedLostPackets, 0)
+        XCTAssertEqual(sessions.maxGapNs, 20_000_000)
+        XCTAssertEqual(sessions.spanSeconds, 0.08, accuracy: 0.001)
     }
 }

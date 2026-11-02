@@ -78,8 +78,18 @@ public struct AudioStats {
     public private(set) var maxGapNs: UInt64 = 0
     private var firstNs: UInt64?
     private var lastNs: UInt64?
+    private var completedSpanSeconds = 0.0
+    private var completedSlots = 0
 
     public init() {}
+
+    /// 発話の開始時に呼ぶ。発話の間の無音を欠落や最大間隔に数えないようにする。
+    public mutating func beginSession() {
+        completedSpanSeconds += currentSpanSeconds
+        completedSlots += currentSlots
+        firstNs = nil
+        lastNs = nil
+    }
 
     public mutating func record(timestampNs: UInt64, payload: [UInt8], decodeFailed: Bool) {
         packets += 1
@@ -91,16 +101,21 @@ public struct AudioStats {
         lastNs = timestampNs
     }
 
-    public var spanSeconds: Double {
+    private var currentSpanSeconds: Double {
         guard let firstNs, let lastNs, lastNs > firstNs else { return 0 }
         return Double(lastNs - firstNs) / 1e9
     }
 
-    /// 20ms 間隔を前提とした欠落推定。
-    public var estimatedLostPackets: Int {
-        guard packets > 0 else { return 0 }
-        return max(0, Int((spanSeconds / 0.02).rounded()) + 1 - packets)
+    /// 現在の発話で、20ms 間隔なら届いているはずのパケット数
+    private var currentSlots: Int {
+        firstNs == nil ? 0 : Int((currentSpanSeconds / 0.02).rounded()) + 1
     }
+
+    /// 発話の間を除いた受信時間の合計
+    public var spanSeconds: Double { completedSpanSeconds + currentSpanSeconds }
+
+    /// 20ms 間隔を前提とした欠落推定。
+    public var estimatedLostPackets: Int { max(0, completedSlots + currentSlots - packets) }
 
     public var summary: String {
         let tocs = tocBytes.sorted().map { String(format: "0x%02X", $0) }.joined(separator: ",")
