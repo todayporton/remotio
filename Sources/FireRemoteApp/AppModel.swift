@@ -136,6 +136,7 @@ final class AppModel: ObservableObject {
         }
         do {
             let new = try PCMOutput(device: device)
+            new.onLog = { [weak self] in self?.log($0) }
             try new.start()
             output = new
             log("音声の出力先: \(device.name)")

@@ -202,6 +202,7 @@ func defaultsSnapshot() -> () -> Void {
 func stream(_ args: [String]) throws {
     let device = try outputDevice(args)
     let output = try PCMOutput(device: device)
+    output.onLog = { print("\(timestamp()) \($0)") }
     let profile = FireTVRemoteProfile()
     let session = try VoiceSession(profile: profile, seize: args.contains("--seize"))
     // 音声ボタンで Spotlight が開かないようにする
@@ -257,6 +258,7 @@ func run(_ args: [String]) throws {
     let output: PCMOutput?
     if option("--device", in: args) != nil {
         output = try PCMOutput(device: try outputDevice(args))
+        output?.onLog = { print("\(timestamp()) \($0)") }
         try output?.start()
     } else {
         output = nil
@@ -327,6 +329,7 @@ func replay(_ args: [String]) throws {
     }
     let device = try outputDevice(args)
     let output = try PCMOutput(device: device)
+    output.onLog = { print($0) }
     let decoder = try OpusDecoder()
     let packets = CaptureFile.decode(try Data(contentsOf: URL(fileURLWithPath: path))).filter { $0.reportID == 0xF0 }
     guard let first = packets.first else {

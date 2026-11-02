@@ -20,6 +20,12 @@ public final class PCMOutput {
     private let prebufferPackets: Int
     private var waiting: [AVAudioPCMBuffer] = []
     private var playing = false
+    private var deviceID: AudioDeviceID
+    private var configObserver: NSObjectProtocol?
+    private var wantsRunning = false
+
+    /// 状態の変化をログへ伝える
+    public var onLog: ((String) -> Void)?
 
     /// - Parameter prebufferPackets: BLE の到着ゆらぎ(実測で最大約43ms)を吸収する待機量。1個 20ms。
     public init(device: AudioDeviceInfo, prebufferPackets: Int = 3) throws {
@@ -27,22 +33,63 @@ public final class PCMOutput {
         self.prebufferPackets = prebufferPackets
         format = AVAudioFormat(commonFormat: .pcmFormatFloat32, sampleRate: 16_000, channels: 1, interleaved: false)!
 
-        var id = device.id
+        deviceID = device.id
+        try applyDevice()
+        engine.attach(player)
+        engine.connect(player, to: engine.mainMixerNode, format: format)
+
+        // サンプルレートの変更などで AVAudioEngine は停止するため、再開する
+        configObserver = NotificationCenter.default.addObserver(
+            forName: .AVAudioEngineConfigurationChange, object: engine, queue: .main
+        ) { [weak self] _ in self?.restart(attemptsLeft: 5) }
+    }
+
+    deinit {
+        if let configObserver { NotificationCenter.default.removeObserver(configObserver) }
+    }
+
+    private func applyDevice() throws {
+        var id = deviceID
         let status = AudioUnitSetProperty(engine.outputNode.audioUnit!, kAudioOutputUnitProperty_CurrentDevice,
                                           kAudioUnitScope_Global, 0, &id, UInt32(MemoryLayout<AudioDeviceID>.size))
         guard status == noErr else { throw PCMOutputError.setDevice(status) }
-        engine.attach(player)
-        engine.connect(player, to: engine.mainMixerNode, format: format)
     }
 
     public func start() throws {
+        wantsRunning = true
         engine.prepare()
         try engine.start()
     }
 
     public func stop() {
+        wantsRunning = false
         player.stop()
         engine.stop()
+    }
+
+    private func restart(attemptsLeft: Int) {
+        guard wantsRunning else { return }
+        player.stop()
+        playing = false
+        waiting.removeAll()
+        do {
+            engine.stop()
+            try applyDevice()
+            engine.connect(player, to: engine.mainMixerNode, format: format)
+            engine.connect(engine.mainMixerNode, to: engine.outputNode,
+                           format: engine.outputNode.inputFormat(forBus: 0))
+            engine.prepare()
+            try engine.start()
+            onLog?("音声出力を再開しました(デバイスの設定変更)")
+        } catch {
+            guard attemptsLeft > 1 else {
+                onLog?("音声出力を再開できません: \(error)")
+                return
+            }
+            DispatchQueue.main.asyncAfter(deadline: .now() + 0.3) { [weak self] in
+                self?.restart(attemptsLeft: attemptsLeft - 1)
+            }
+        }
     }
 
     /// 発話の開始時に呼ぶ。前回の残りを破棄し、再びプリバッファから始める。
@@ -76,6 +123,11 @@ public final class PCMOutput {
 
     private func flushWaiting() {
         guard !waiting.isEmpty else { return }
+        guard engine.isRunning else {
+            // 再開処理の完了前は再生できないため、待機分を捨てる
+            waiting.removeAll()
+            return
+        }
         waiting.forEach { player.scheduleBuffer($0, completionHandler: nil) }
         waiting.removeAll()
         player.play()
