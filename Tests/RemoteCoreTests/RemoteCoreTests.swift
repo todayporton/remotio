@@ -214,6 +214,8 @@ final class RemoteCoreTests: XCTestCase {
         XCTAssertEqual(p.systemUsage(of: "play_pause"), 0xC_0000_00CD)
         XCTAssertEqual(p.systemUsage(of: "voice"), 0xC_0000_0221)
         XCTAssertNil(p.systemUsage(of: "nosuch"))
+        XCTAssertEqual(p.standardActionName(of: "volume_up"), "音量を上げる")
+        XCTAssertNil(p.standardActionName(of: "home"))
         XCTAssertEqual(KeySuppressor.mappingJSON(usages: []), "{\"UserKeyMapping\":[]}")
         XCTAssertEqual(KeySuppressor.mappingJSON(usages: [1]),
                        "{\"UserKeyMapping\":[{\"HIDKeyboardModifierMappingSrc\":1,\"HIDKeyboardModifierMappingDst\":0}]}")

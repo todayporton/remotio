@@ -240,9 +240,11 @@ final class AppModel: ObservableObject {
         save(edited)
     }
 
-    /// Mac の標準動作があるボタンか(音声ボタンは常に止めるので含めない)
-    func hasStandardAction(_ button: String) -> Bool {
-        button != profile.voiceButtonName && profile.systemUsage(of: button) != nil
+    /// メニューとボタンに出す、何も割り当てていないときの名前
+    func unassignedTitle(_ button: String) -> String {
+        if button == profile.voiceButtonName { return "キーなし" }
+        guard profile.systemUsage(of: button) != nil else { return "割り当てなし" }
+        return profile.standardActionName(of: button).map { "標準(\($0))" } ?? "標準"
     }
 
     func restoreDefaultBindings() { save(KeyMap.defaultBindings) }

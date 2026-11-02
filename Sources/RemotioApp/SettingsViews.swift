@@ -99,6 +99,9 @@ struct SettingsView: View {
                 }
             }
             .frame(maxWidth: .infinity, maxHeight: .infinity)
+            .contentShape(Rectangle())
+            // 他のページでも、何もないところのクリックでフォーカスを外す
+            .simultaneousGesture(TapGesture().onEnded { clearFocusIfOutsideControl() })
         }
         .frame(minWidth: 980, minHeight: 700)
         .onAppear {
@@ -112,6 +115,16 @@ struct SettingsView: View {
             model.refreshPermissions()
             model.refreshDevices()
         }
+    }
+}
+
+/// クリックした先が操作できる部品でなければフォーカスを外す
+private func clearFocusIfOutsideControl() {
+    guard let window = NSApp.keyWindow, let event = NSApp.currentEvent,
+          let content = window.contentView else { return }
+    let hit = content.hitTest(content.convert(event.locationInWindow, from: nil))
+    if !(hit is NSControl) && !(hit is NSTextView) {
+        window.makeFirstResponder(nil)
     }
 }
 
@@ -248,6 +261,9 @@ struct ButtonsPage: View {
         }
         .padding(22)
         .padding(.top, 8)
+        .frame(maxWidth: .infinity, maxHeight: .infinity)
+        .contentShape(Rectangle())
+        .onTapGesture(perform: clearSelection)
         .onDisappear(perform: stopRecording)
     }
 
@@ -257,7 +273,6 @@ struct ButtonsPage: View {
             HStack(alignment: .top, spacing: 40) {
                 column(RemoteButton.left)
                 RemoteDrawing(pressed: model.pressedButtons, selected: selected ?? recording) { id in
-                    selected = id
                     startRecording(id)
                 }
                 .frame(width: 112, height: 490)
@@ -287,10 +302,13 @@ struct ButtonsPage: View {
         return Card(highlighted: active, padding: 8) {
             HStack(spacing: 8) {
                 Image(systemName: button.symbol).frame(width: 20).foregroundStyle(.secondary)
-                Text(button.title).font(.callout.weight(.medium)).lineLimit(1)
+                Text(button.title)
+                    .font(.callout.weight(.medium))
+                    .lineLimit(1)
+                    .foregroundStyle(binding == ActionCatalog.disabled ? Color.secondary : Color.primary)
                 Spacer(minLength: 4)
                 if isRecording {
-                    Button("キーを入力…", action: stopRecording)
+                    Button("キーを入力…", action: clearSelection)
                         .frame(minWidth: 84)
                         .accessibilityLabel("\(button.title) のキー入力を中止")
                 } else {
@@ -302,26 +320,23 @@ struct ButtonsPage: View {
 
     private func actionMenu(_ button: RemoteButton, binding: String?) -> some View {
         Menu {
-            Button("キーを入力…") {
-                selected = button.id
-                startRecording(button.id)
-            }
+            Button("キーを入力…") { startRecording(button.id) }
             Divider()
-            Button(unassignedTitle(button)) { model.setBinding(button.id, to: nil) }
-            Button("無効") { model.setBinding(button.id, to: ActionCatalog.disabled) }
+            Button(model.unassignedTitle(button.id)) { assign(button, nil) }
+            Button("無効") { assign(button, ActionCatalog.disabled) }
             Divider()
             Menu("メディア操作") {
                 ForEach(ActionCatalog.mediaItems) { item in
-                    Button(item.title) { model.setBinding(button.id, to: item.id) }
+                    Button(item.title) { assign(button, item.id) }
                 }
             }
             Menu("システム操作") {
                 ForEach(ActionCatalog.systemItems) { item in
-                    Button(item.title) { model.setBinding(button.id, to: item.id) }
+                    Button(item.title) { assign(button, item.id) }
                 }
             }
         } label: {
-            Text(binding.map(KeyCombo.displayText) ?? unassignedTitle(button))
+            Text(binding.map(KeyCombo.displayText) ?? model.unassignedTitle(button.id))
                 .font(.body.weight(.medium))
                 .lineLimit(1)
         }
@@ -331,13 +346,19 @@ struct ButtonsPage: View {
         .padding(.vertical, 3)
         .background(Color.primary.opacity(0.07), in: RoundedRectangle(cornerRadius: 6))
         .accessibilityLabel("\(button.title) の操作")
-        .accessibilityValue(binding ?? unassignedTitle(button))
+        .accessibilityValue(binding ?? model.unassignedTitle(button.id))
     }
 
-    /// 何も割り当てていないときの表示。Mac 側の動作に合わせる
-    private func unassignedTitle(_ button: RemoteButton) -> String {
-        if button.id == "voice" { return "キーなし" }
-        return model.hasStandardAction(button.id) ? "標準" : "割り当てなし"
+    /// 操作を選び終えたら、選択状態とフォーカスを解除する
+    private func assign(_ button: RemoteButton, _ value: String?) {
+        model.setBinding(button.id, to: value)
+        clearSelection()
+    }
+
+    private func clearSelection() {
+        stopRecording()
+        selected = nil
+        NSApp.keyWindow?.makeFirstResponder(nil)
     }
 
     private var leaderLines: some View {
@@ -374,9 +395,9 @@ struct ButtonsPage: View {
                         .font(.callout).foregroundStyle(.secondary)
                 }
                 Spacer()
-                if recording != nil { Button("キャンセル", action: stopRecording) }
+                if recording != nil { Button("キャンセル", action: clearSelection) }
                 Button("初期設定に戻す") {
-                    stopRecording()
+                    clearSelection()
                     model.restoreDefaultBindings()
                 }
             }
@@ -385,6 +406,7 @@ struct ButtonsPage: View {
 
     private func startRecording(_ id: String) {
         stopRecording()
+        selected = id
         recording = id
         heldModifier = nil
         monitor = NSEvent.addLocalMonitorForEvents(matching: [.keyDown, .flagsChanged]) { event in
@@ -414,7 +436,7 @@ struct ButtonsPage: View {
                 return
             }
             model.setBinding(id, to: text)
-            stopRecording()
+            clearSelection()
             return
         }
         // 修飾キー: 他のキーと組み合わせずに離したときだけ単体として記録する
@@ -425,7 +447,7 @@ struct ButtonsPage: View {
         } else if let held = heldModifier, held == event.keyCode,
                   let text = KeyCombo.recordedModifierText(keyCode: held) {
             model.setBinding(id, to: text)
-            stopRecording()
+            clearSelection()
         }
     }
 }

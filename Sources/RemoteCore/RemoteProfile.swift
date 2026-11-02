@@ -24,6 +24,8 @@ public protocol RemoteProfile: Sendable {
     func pressedButtons(reportID: UInt8, payload: [UInt8]) -> Set<String>?
     /// ボタンが Mac へ送る HID usage(上位 32bit が usage page)。不明なら nil。
     func systemUsage(of button: String) -> UInt64?
+    /// ボタンの標準動作の名前。動作を確認できていないものは nil。
+    func standardActionName(of button: String) -> String?
 }
 
 /// Fire TV Stick 4K 付属リモコン。コード表は fire-remote-client (MIT) の調査結果に基づく。
@@ -74,6 +76,14 @@ public struct FireTVRemoteProfile: RemoteProfile {
         default:
             return nil
         }
+    }
+
+    public func standardActionName(of button: String) -> String? {
+        [
+            "dpad_up": "↑", "dpad_down": "↓", "dpad_left": "←", "dpad_right": "→",
+            "select": "Enter", "play_pause": "再生・停止", "rewind": "巻き戻し", "fast_forward": "早送り",
+            "volume_up": "音量を上げる", "volume_down": "音量を下げる", "mute": "ミュート",
+        ][button]
     }
 
     public func systemUsage(of button: String) -> UInt64? {
