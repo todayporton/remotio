@@ -144,6 +144,20 @@ public struct KeyCombo: Equatable, Sendable {
         self.modifierOnlyFlag = modifierOnlyFlag
     }
 
+    /// 実際のキーボードがそのキーに付けるフラグ。矢印キーには Fn とテンキー、
+    /// ファンクションキーとナビゲーションキーには Fn が付く。ショートカットの判定に使うアプリがある。
+    static func hardwareFlags(for keyCode: CGKeyCode) -> UInt64 {
+        switch keyCode {
+        case 123...126:
+            return CGEventFlags.maskSecondaryFn.rawValue | CGEventFlags.maskNumericPad.rawValue
+        case 96, 97, 98, 99, 100, 101, 103, 105, 106, 107, 109, 111, 113, 118, 120, 122, 64, 79, 80, 90,
+             115, 116, 119, 121:
+            return CGEventFlags.maskSecondaryFn.rawValue
+        default:
+            return 0
+        }
+    }
+
     /// 物理キーのキーコードと修飾フラグから、設定用の文字列を作る(キー入力の記録に使う)。
     public static func recordedText(keyCode: CGKeyCode, flags: CGEventFlags) -> String? {
         let preferred = keys.filter { $0.value == keyCode && $0.key != "enter" && $0.key != "esc" }.keys.sorted().first
@@ -314,10 +328,11 @@ public extension KeyAction {
             modifierDowns.append(InjectedKeyEvent(kind: .flagsChanged, keyCode: keyCode, flags: held))
             modifierUps.insert(InjectedKeyEvent(kind: .flagsChanged, keyCode: keyCode, flags: before), at: 0)
         }
+        let keyFlags = held | KeyCombo.hardwareFlags(for: combo.keyCode)
         if isDown {
-            return modifierDowns + [InjectedKeyEvent(kind: .keyDown, keyCode: combo.keyCode, flags: held)]
+            return modifierDowns + [InjectedKeyEvent(kind: .keyDown, keyCode: combo.keyCode, flags: keyFlags)]
         }
-        return [InjectedKeyEvent(kind: .keyUp, keyCode: combo.keyCode, flags: held)] + modifierUps
+        return [InjectedKeyEvent(kind: .keyUp, keyCode: combo.keyCode, flags: keyFlags)] + modifierUps
     }
 }
 

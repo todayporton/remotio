@@ -163,6 +163,15 @@ final class RemoteCoreTests: XCTestCase {
             InjectedKeyEvent(kind: .flagsChanged, keyCode: 59, flags: 0),
         ])
 
+        // 矢印キーには実際のキーボードと同じフラグを付ける。修飾キーのイベントには付けない
+        let arrowFlags = CGEventFlags.maskSecondaryFn.rawValue | CGEventFlags.maskNumericPad.rawValue
+        let opt = CGEventFlags.maskAlternate.rawValue
+        XCTAssertEqual(KeyAction(combo: try KeyCombo("ctrl+opt+left"), isDown: true).events, [
+            InjectedKeyEvent(kind: .flagsChanged, keyCode: 59, flags: ctrl),
+            InjectedKeyEvent(kind: .flagsChanged, keyCode: 58, flags: ctrl | opt),
+            InjectedKeyEvent(kind: .keyDown, keyCode: 123, flags: ctrl | opt | arrowFlags),
+        ])
+
         // 修飾キーのないキーと、修飾キー単体
         XCTAssertEqual(KeyAction(combo: try KeyCombo("return"), isDown: true).events,
                        [InjectedKeyEvent(kind: .keyDown, keyCode: 36, flags: 0)])
