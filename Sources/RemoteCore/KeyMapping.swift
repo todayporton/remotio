@@ -113,6 +113,12 @@ public enum KeyInjector {
     /// キー送信に必要なアクセシビリティ権限の有無
     public static var isTrusted: Bool { AXIsProcessTrusted() }
 
+    /// システムの許可ダイアログを表示する
+    public static func requestTrust() {
+        let key = kAXTrustedCheckOptionPrompt.takeUnretainedValue() as String
+        _ = AXIsProcessTrustedWithOptions([key: true] as CFDictionary)
+    }
+
     public static func post(_ action: KeyAction) {
         guard let event = CGEvent(keyboardEventSource: nil, virtualKey: action.combo.keyCode, keyDown: action.isDown)
         else { return }

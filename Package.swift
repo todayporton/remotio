@@ -7,6 +7,7 @@ let package = Package(
     products: [
         .library(name: "RemoteCore", targets: ["RemoteCore"]),
         .executable(name: "fireremote", targets: ["fireremote"]),
+        .executable(name: "FireRemoteApp", targets: ["FireRemoteApp"]),
     ],
     targets: [
         .systemLibrary(
@@ -21,6 +22,11 @@ let package = Package(
         ),
         .executableTarget(
             name: "fireremote",
+            dependencies: ["RemoteCore"],
+            swiftSettings: [.swiftLanguageMode(.v5)]
+        ),
+        .executableTarget(
+            name: "FireRemoteApp",
             dependencies: ["RemoteCore"],
             swiftSettings: [.swiftLanguageMode(.v5)]
         ),

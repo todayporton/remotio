@@ -3,3 +3,4 @@
 # 録音音声・生レポートは個人データのため管理しない
 captures/*
 !captures/.gitkeep
+build/
