@@ -425,6 +425,26 @@ struct ConnectionPage: View {
 
                 VStack(spacing: 18) {
                     Card {
+                        VStack(alignment: .leading, spacing: 10) {
+                            HStack {
+                                Text("仮想マイク").font(.headline)
+                                Spacer()
+                                if model.driverBusy {
+                                    ProgressView().controlSize(.small)
+                                } else if model.driverInstalled {
+                                    Button("アンインストール", action: model.uninstallDriver)
+                                } else {
+                                    Button("インストール", action: model.installDriver)
+                                }
+                            }
+                            Text(driverStatus).font(.callout).foregroundStyle(.secondary)
+                                .fixedSize(horizontal: false, vertical: true)
+                            if let error = model.driverError {
+                                Text(error).font(.caption).foregroundStyle(.red)
+                            }
+                        }
+                    }
+                    Card {
                         VStack(alignment: .leading, spacing: 12) {
                             Text("音声の出力先").font(.headline)
                             HStack {
@@ -458,9 +478,19 @@ struct ConnectionPage: View {
         .padding(.top, 8)
     }
 
+    private var driverStatus: String {
+        if model.driverInstalled && model.driverDeviceAvailable {
+            return "使用できます。音声入力を使うアプリで、入力に「Remotio Microphone」を選んでください。"
+        }
+        if model.driverInstalled {
+            return "インストール済みですが、デバイスが見つかりません。Mac を再起動すると認識される場合があります。"
+        }
+        return "他のアプリのマイクとして使うために必要です。管理者パスワードの入力が必要で、処理の間は Mac の音声が一瞬止まります。"
+    }
+
     private var outputHint: String {
         if model.selectedDeviceUID == nil {
-            return "他のアプリのマイクとして使うには、BlackHole などの仮想デバイスを選びます。"
+            return "他のアプリのマイクとして使うには、「Remotio Microphone」を選びます。"
         }
         if model.hasVirtualDeviceSelected {
             return "使うアプリの入力に、同じデバイスを選んでください。"

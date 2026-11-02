@@ -14,6 +14,10 @@ final class AppModel: ObservableObject {
     @Published private(set) var inputMonitoringGranted = false
     @Published private(set) var loginItemEnabled = SMAppService.mainApp.status == .enabled
     @Published var keymapError: String?
+    @Published private(set) var driverInstalled = DriverInstaller.isInstalled
+    @Published private(set) var driverDeviceAvailable = false
+    @Published private(set) var driverBusy = false
+    @Published private(set) var driverError: String?
     /// 押されているボタン(画面のリモコン図とカードに反映する)
     @Published private(set) var pressedButtons: Set<String> = []
     @Published private(set) var bindings: [String: String] = KeyMap.defaultBindings
@@ -143,6 +147,55 @@ final class AppModel: ObservableObject {
 
     func refreshDevices() {
         outputDevices = AudioDevices.all().filter { $0.outputChannels > 0 }
+        driverInstalled = DriverInstaller.isInstalled
+        driverDeviceAvailable = outputDevices.contains { $0.uid == DriverInstaller.deviceUID }
+        selectBuiltInMicrophoneIfNeeded()
+        // Core Audio の再起動後などに、選択中のデバイスへ出力し直す
+        if output == nil, let uid = selectedDeviceUID, outputDevices.contains(where: { $0.uid == uid }) {
+            rebuildOutput()
+        }
+    }
+
+    /// 内蔵の仮想マイクが初めて使えるようになったら、一度だけ出力先に選ぶ
+    private func selectBuiltInMicrophoneIfNeeded() {
+        guard driverDeviceAvailable, selectedDeviceUID == nil,
+              !UserDefaults.standard.bool(forKey: "didAutoSelectMicrophone") else { return }
+        UserDefaults.standard.set(true, forKey: "didAutoSelectMicrophone")
+        selectedDeviceUID = DriverInstaller.deviceUID
+    }
+
+    func installDriver() { runDriverTask(DriverInstaller.install) }
+    func uninstallDriver() {
+        if selectedDeviceUID == DriverInstaller.deviceUID { selectedDeviceUID = nil }
+        runDriverTask(DriverInstaller.uninstall)
+    }
+
+    private func runDriverTask(_ task: @escaping () -> String?) {
+        driverBusy = true
+        driverError = nil
+        output?.stop()
+        output = nil
+        DispatchQueue.global(qos: .userInitiated).async { [weak self] in
+            let error = task()
+            DispatchQueue.main.async {
+                self?.driverError = error
+                if let error { self?.log("ドライバの処理に失敗: \(error)") }
+                self?.waitForAudioSystem(attemptsLeft: 10)
+            }
+        }
+    }
+
+    /// Core Audio の再起動を待ってから状態を更新する
+    private func waitForAudioSystem(attemptsLeft: Int) {
+        refreshDevices()
+        let settled = driverInstalled == driverDeviceAvailable
+        if settled || attemptsLeft <= 1 {
+            driverBusy = false
+            return
+        }
+        DispatchQueue.main.asyncAfter(deadline: .now() + 0.5) { [weak self] in
+            self?.waitForAudioSystem(attemptsLeft: attemptsLeft - 1)
+        }
     }
 
     func refreshPermissions() {

@@ -3,12 +3,15 @@
 set -euo pipefail
 cd "$(dirname "$0")/.."
 swift build -c release --product RemotioApp
+scripts/build-driver.sh
 BIN="$(swift build -c release --show-bin-path)/RemotioApp"
 APP=build/Remotio.app
 OPUS=/opt/homebrew/opt/opus/lib/libopus.0.dylib
 /bin/rm -rf "$APP"
 mkdir -p "$APP/Contents/MacOS" "$APP/Contents/Frameworks" "$APP/Contents/Resources"
 cp /opt/homebrew/opt/opus/COPYING "$APP/Contents/Resources/libopus-COPYING.txt"
+cp Vendor/libASPL/LICENSE "$APP/Contents/Resources/libASPL-LICENSE.txt"
+cp -R build/RemotioMicrophone.driver "$APP/Contents/Resources/"
 cp "$BIN" "$APP/Contents/MacOS/Remotio"
 cp -L "$OPUS" "$APP/Contents/Frameworks/"
 chmod u+w "$APP"/Contents/MacOS/* "$APP"/Contents/Frameworks/*
