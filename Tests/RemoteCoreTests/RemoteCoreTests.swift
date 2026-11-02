@@ -114,6 +114,39 @@ final class RemoteCoreTests: XCTestCase {
         XCTAssertEqual(try KeyCombo("shift+cmd+p").keyCode, 35)
     }
 
+    func testInjectedEventOrder() throws {
+        let ctrl = CGEventFlags.maskControl.rawValue
+        let cmd = CGEventFlags.maskCommand.rawValue
+        let ctrlT = try KeyCombo("ctrl+t")
+        XCTAssertEqual(KeyAction(combo: ctrlT, isDown: true).events, [
+            InjectedKeyEvent(kind: .flagsChanged, keyCode: 59, flags: ctrl),
+            InjectedKeyEvent(kind: .keyDown, keyCode: 17, flags: ctrl),
+        ])
+        XCTAssertEqual(KeyAction(combo: ctrlT, isDown: false).events, [
+            InjectedKeyEvent(kind: .keyUp, keyCode: 17, flags: ctrl),
+            InjectedKeyEvent(kind: .flagsChanged, keyCode: 59, flags: 0),
+        ])
+
+        // 複数の修飾キーは押した順と逆に離す
+        let both = try KeyCombo("cmd+ctrl+a")
+        XCTAssertEqual(KeyAction(combo: both, isDown: false).events, [
+            InjectedKeyEvent(kind: .keyUp, keyCode: 0, flags: ctrl | cmd),
+            InjectedKeyEvent(kind: .flagsChanged, keyCode: 55, flags: ctrl),
+            InjectedKeyEvent(kind: .flagsChanged, keyCode: 59, flags: 0),
+        ])
+
+        // 修飾キーのないキーと、修飾キー単体
+        XCTAssertEqual(KeyAction(combo: try KeyCombo("return"), isDown: true).events,
+                       [InjectedKeyEvent(kind: .keyDown, keyCode: 36, flags: 0)])
+        let fn = try KeyCombo("fn")
+        XCTAssertEqual(KeyAction(combo: fn, isDown: true).events, [
+            InjectedKeyEvent(kind: .flagsChanged, keyCode: 63, flags: CGEventFlags.maskSecondaryFn.rawValue),
+        ])
+        XCTAssertEqual(KeyAction(combo: fn, isDown: false).events, [
+            InjectedKeyEvent(kind: .flagsChanged, keyCode: 63, flags: 0),
+        ])
+    }
+
     func testVoiceKeyReleaseIsDelayedAndKeepsOrder() throws {
         var posted: [KeyAction] = []
         let router = ButtonKeyRouter(map: try KeyMap(["voice": "fn"]), voiceButton: "voice", voiceReleaseDelay: 60) {

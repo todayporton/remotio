@@ -27,6 +27,11 @@ public struct KeyCombo: Equatable, Sendable {
         "fn": (63, .maskSecondaryFn),
     ]
 
+    /// 修飾キーを押す順序とキーコード
+    static let modifierKeyCodes: [(flag: CGEventFlags, keyCode: CGKeyCode)] = [
+        (.maskControl, 59), (.maskAlternate, 58), (.maskShift, 56), (.maskCommand, 55),
+    ]
+
     static let modifiers: [String: CGEventFlags] = [
         "cmd": .maskCommand, "shift": .maskShift, "opt": .maskAlternate, "alt": .maskAlternate, "ctrl": .maskControl,
     ]
@@ -199,6 +204,39 @@ public final class ButtonKeyRouter {
     }
 }
 
+/// 送信するキーイベント 1 つ分
+public struct InjectedKeyEvent: Equatable, Sendable {
+    public enum Kind: Sendable { case keyDown, keyUp, flagsChanged }
+    public let kind: Kind
+    public let keyCode: CGKeyCode
+    public let flags: UInt64
+}
+
+public extension KeyAction {
+    /// 実際のキーボードと同じ順序のイベント列を返す。
+    /// キーの状態を flagsChanged で追跡するアプリがあるため、修飾キーも個別のイベントとして送る。
+    /// 例: ctrl+t の押下は ctrl(flagsChanged) → t(keyDown)、解放は t(keyUp) → ctrl(flagsChanged)。
+    var events: [InjectedKeyEvent] {
+        if let flag = combo.modifierOnlyFlag {
+            return [InjectedKeyEvent(kind: .flagsChanged, keyCode: combo.keyCode, flags: isDown ? flag : 0)]
+        }
+        // 順に押した状態を積み上げる
+        var held: UInt64 = 0
+        var modifierDowns: [InjectedKeyEvent] = []
+        var modifierUps: [InjectedKeyEvent] = []
+        for (flag, keyCode) in KeyCombo.modifierKeyCodes where combo.flags & flag.rawValue != 0 {
+            let before = held
+            held |= flag.rawValue
+            modifierDowns.append(InjectedKeyEvent(kind: .flagsChanged, keyCode: keyCode, flags: held))
+            modifierUps.insert(InjectedKeyEvent(kind: .flagsChanged, keyCode: keyCode, flags: before), at: 0)
+        }
+        if isDown {
+            return modifierDowns + [InjectedKeyEvent(kind: .keyDown, keyCode: combo.keyCode, flags: held)]
+        }
+        return [InjectedKeyEvent(kind: .keyUp, keyCode: combo.keyCode, flags: held)] + modifierUps
+    }
+}
+
 public enum KeyInjector {
     /// キー送信に必要なアクセシビリティ権限の有無
     public static var isTrusted: Bool { AXIsProcessTrusted() }
@@ -209,15 +247,16 @@ public enum KeyInjector {
         _ = AXIsProcessTrustedWithOptions([key: true] as CFDictionary)
     }
 
+    /// CGEventSource.keyState(.hidSystemState) で押下中と判定されるよう、HID の状態を持つソースから送る
+    private static let source = CGEventSource(stateID: .hidSystemState)
+
     public static func post(_ action: KeyAction) {
-        guard let event = CGEvent(keyboardEventSource: nil, virtualKey: action.combo.keyCode, keyDown: action.isDown)
-        else { return }
-        if let flag = action.combo.modifierOnlyFlag {
-            event.type = .flagsChanged
-            event.flags = action.isDown ? CGEventFlags(rawValue: flag) : []
-        } else {
-            event.flags = CGEventFlags(rawValue: action.combo.flags)
+        for item in action.events {
+            guard let event = CGEvent(keyboardEventSource: source, virtualKey: item.keyCode,
+                                      keyDown: item.kind == .keyDown) else { continue }
+            if item.kind == .flagsChanged { event.type = .flagsChanged }
+            event.flags = CGEventFlags(rawValue: item.flags)
+            event.post(tap: .cghidEventTap)
         }
-        event.post(tap: .cghidEventTap)
     }
 }
