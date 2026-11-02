@@ -4,6 +4,8 @@ Use Bluetooth remotes as input devices on your Mac.
 
 Bluetooth リモコンを、Mac のワイヤレスマイク兼コントローラーとして使うアプリです。現在の対応機種は、Fire TV Stick 4K 付属の Alexa 音声認識リモコンです。Amazon とは関係のない非公式のプロジェクトです。
 
+> **アルファ版です。** 動作確認は限られた環境でしか行っていません。設定の形式や動作は今後変わる場合があります。
+
 ## インストール
 
 動作環境: Apple Silicon の Mac、macOS 13 以降、Mac とペアリング済みの対応リモコン
