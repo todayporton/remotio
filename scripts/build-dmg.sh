@@ -3,7 +3,7 @@
 set -euo pipefail
 cd "$(dirname "$0")/.."
 scripts/build-app.sh
-IDENTITY="${CODESIGN_IDENTITY:-FireRemote Local}"
+IDENTITY="${CODESIGN_IDENTITY:-FireRemote}"
 STAGE="$(mktemp -d)"
 trap '/bin/rm -rf "$STAGE"' EXIT
 cp -R build/FireRemote.app "$STAGE/"
