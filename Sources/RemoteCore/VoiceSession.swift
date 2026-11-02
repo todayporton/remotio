@@ -11,6 +11,8 @@ public final class VoiceSession {
     public var onPCM: (([Int16]) -> Void)?
     /// マイク状態の変更時に呼ばれる(true = 発話開始)
     public var onMicChange: ((Bool) -> Void)?
+    public var onButton: ((ButtonEvent) -> Void)?
+    public var onDisconnect: (() -> Void)?
 
     private var tracker: ButtonTracker
     private var voice: VoiceController
@@ -37,6 +39,7 @@ public final class VoiceSession {
                 onMicChange?(false)
             }
             onLog?("[切断]")
+            onDisconnect?()
         }
         remote.onReport = { [unowned self] in handle($0) }
     }
@@ -65,6 +68,7 @@ public final class VoiceSession {
         }
         for event in tracker.process(reportID: report.reportID, payload: report.payload) {
             onLog?("\(event.isDown ? "押下" : "解放"): \(event.name)")
+            onButton?(event)
             guard let enable = voice.process(event) else { continue }
             if enable {
                 if let fresh = try? OpusDecoder() { decoder = fresh }

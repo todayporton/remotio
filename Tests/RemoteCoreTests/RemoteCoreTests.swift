@@ -1,4 +1,5 @@
 import COpus
+import CoreGraphics
 import XCTest
 @testable import RemoteCore
 
@@ -88,6 +89,37 @@ final class RemoteCoreTests: XCTestCase {
         XCTAssertEqual(UInt32(d[4]) | UInt32(d[5]) << 8, 42)
         XCTAssertEqual(UInt32(d[40]) | UInt32(d[41]) << 8, 6)
         XCTAssertEqual(Array(d[44...45]), [1, 0])
+    }
+
+    func testKeyComboParsing() throws {
+        let combo = try KeyCombo("cmd+shift+a")
+        XCTAssertEqual(combo.keyCode, 0)
+        XCTAssertEqual(combo.flags, CGEventFlags([.maskCommand, .maskShift]).rawValue)
+        XCTAssertEqual(try KeyCombo("Return").keyCode, 36)
+        XCTAssertThrowsError(try KeyCombo("cmd+nosuchkey"))
+        XCTAssertThrowsError(try KeyCombo("hyper+a"))
+        XCTAssertThrowsError(try KeyCombo(""))
+    }
+
+    func testVoiceButtonCannotBeMapped() {
+        XCTAssertThrowsError(try KeyMap(["voice": "a"], voiceButton: "voice")) {
+            XCTAssertEqual($0 as? KeyMapError, .voiceReserved)
+        }
+    }
+
+    func testKeyMapperPressReleaseAndCleanup() throws {
+        var mapper = KeyMapper(map: try KeyMap(KeyMap.defaultBindings, voiceButton: "voice"))
+        let ret = try KeyCombo("return")
+        XCTAssertEqual(mapper.process(ButtonEvent(name: "select", isDown: true)), KeyAction(combo: ret, isDown: true))
+        XCTAssertNil(mapper.process(ButtonEvent(name: "select", isDown: true)))
+        XCTAssertEqual(mapper.process(ButtonEvent(name: "select", isDown: false)), KeyAction(combo: ret, isDown: false))
+        XCTAssertNil(mapper.process(ButtonEvent(name: "select", isDown: false)))
+        XCTAssertNil(mapper.process(ButtonEvent(name: "voice", isDown: true)))
+        XCTAssertNil(mapper.process(ButtonEvent(name: "mute", isDown: true)))
+
+        _ = mapper.process(ButtonEvent(name: "select", isDown: true))
+        XCTAssertEqual(mapper.releaseAll(), [KeyAction(combo: ret, isDown: false)])
+        XCTAssertEqual(mapper.releaseAll(), [])
     }
 
     func testAudioDeviceResolve() throws {

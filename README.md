@@ -28,6 +28,16 @@ swift test
 .build/debug/fireremote capture-input --device "BlackHole 2ch" --out in.wav # 経路の検証用
 ```
 
+キー割り当ては `run` で使います。
+
+```sh
+.build/debug/fireremote run --dry-run                      # キーを送らず判定だけ表示
+.build/debug/fireremote run --device "BlackHole 2ch"       # キー割り当て + 音声出力
+.build/debug/fireremote run --config keymap.json           # 割り当てを変更
+```
+
+既定の割り当ては、方向キーが矢印、決定が Return、戻るが Escape、再生・停止が Space です。音声ボタンは Push-to-Talk 専用です。`keymap.json` の例: `{"dpad_up": "up", "play_pause": "cmd+shift+p"}`。キー送信にはアクセシビリティの権限が必要です。`run` は既定で占有モードを使います(`--no-seize` で無効)。
+
 `stream` の出力先は `--device` での指定が必須です。システムの既定デバイスは変更しません。他のアプリでは、入力デバイスとして BlackHole を選びます。
 
 `record` は音声ボタンを離すと終了し、`captures/` に `.wav` と生 Report の `.bin` を保存します。`captures/` には音声が残るため、Git の管理対象外にしています。
@@ -101,7 +111,8 @@ swift test
 - `--seize` は未検証です。
 - 他のアプリで BlackHole をマイクとして選ぶ確認はしていません(音声が届くことは `capture-input` で確認)。
 - 2026-11-02 の確認中に `bluetoothd` が1回クラッシュしました(SIGSEGV)。原因は不明です。リモコンは決定ボタンを押すと再接続できました。
-- キー割り当て(Phase 6)以降は未実装です。
+- キーの実送信(`run`、`send-key`)は未検証です。権限なしで拒否されることのみ VM で確認しました。
+- メニューバーアプリ(Phase 7)は未実装です。
 
 ## 参考
 

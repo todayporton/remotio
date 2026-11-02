@@ -14,6 +14,9 @@ let usage = """
   devices                   オーディオデバイスの一覧を表示
   stream --device 名前 [--seconds N] [--seize]
                             音声ボタンを押している間の音声を指定デバイスへ出力
+  run [--config 割り当て.json] [--device 名前] [--dry-run] [--no-seize] [--seconds N]
+                            キー割り当てを有効化。--device 指定時は音声も出力
+  send-key <キー>           指定キーを 1 回送信(検証用。例: cmd+shift+a)
   replay <入力.bin> --device 名前
                             記録済みの音声を指定デバイスへ出力(経路の検証用)
   capture-input --device 名前 --out 出力.wav [--seconds N]
@@ -227,6 +230,79 @@ func stream(_ args: [String]) throws {
     CFRunLoopRun()
 }
 
+/// キー割り当てを有効にして常駐する。既定で占有モードを使い、元のキー入力が二重に届かないようにする。
+func run(_ args: [String]) throws {
+    let profile = FireTVRemoteProfile()
+    let dryRun = args.contains("--dry-run")
+    let map: KeyMap
+    if let path = option("--config", in: args) {
+        map = try KeyMap.load(url: URL(fileURLWithPath: path), voiceButton: profile.voiceButtonName)
+    } else {
+        map = try KeyMap(KeyMap.defaultBindings, voiceButton: profile.voiceButtonName)
+    }
+    if !dryRun && !KeyInjector.isTrusted {
+        print("アクセシビリティの権限がないためキーを送信できません。--dry-run なら権限なしで確認できます。")
+        exit(2)
+    }
+
+    let output: PCMOutput?
+    if option("--device", in: args) != nil {
+        output = try PCMOutput(device: try outputDevice(args))
+        try output?.start()
+    } else {
+        output = nil
+    }
+
+    let session = try VoiceSession(profile: profile, seize: !args.contains("--no-seize"))
+    var mapper = KeyMapper(map: map)
+    func apply(_ action: KeyAction) {
+        print("\(timestamp()) キー\(action.isDown ? "押下" : "解放"): \(action.combo.text)\(dryRun ? " (dry-run)" : "")")
+        if !dryRun { KeyInjector.post(action) }
+    }
+    func finish() {
+        mapper.releaseAll().forEach(apply)
+        session.shutdown()
+        output?.stop()
+        print("統計: \(session.stats.summary)")
+        exit(0)
+    }
+
+    session.onLog = { print("\(timestamp()) \($0)") }
+    session.onPCM = { output?.enqueue($0) }
+    session.onMicChange = { enabled in
+        if enabled { output?.beginSession() } else { output?.endSession() }
+    }
+    session.onButton = { event in
+        if let action = mapper.process(event) { apply(action) }
+    }
+    session.onDisconnect = { mapper.releaseAll().forEach(apply) }
+
+    startOrExit(session)
+    let signals = onSignal { finish() }
+    _ = signals
+    if let s = option("--seconds", in: args).flatMap(Double.init) {
+        DispatchQueue.main.asyncAfter(deadline: .now() + s) { finish() }
+    }
+    print("キー割り当てを開始しました。Ctrl-C で終了します。")
+    CFRunLoopRun()
+}
+
+/// 指定したキーを 1 回送る(キー送信の検証用)。
+func sendKey(_ args: [String]) throws {
+    guard let text = args.first else {
+        print(usage)
+        exit(64)
+    }
+    let combo = try KeyCombo(text)
+    guard KeyInjector.isTrusted else {
+        print("アクセシビリティの権限がありません")
+        exit(2)
+    }
+    KeyInjector.post(KeyAction(combo: combo, isDown: true))
+    KeyInjector.post(KeyAction(combo: combo, isDown: false))
+    print("送信: \(text)")
+}
+
 /// 記録済みの音声を実際の到着間隔で出力する。リモコンなしで音声経路を検証するために使う。
 func replay(_ args: [String]) throws {
     guard let path = args.first, !path.hasPrefix("--") else {
@@ -312,6 +388,8 @@ do {
     case "record": try record(Array(args.dropFirst()))
     case "decode": try decode(Array(args.dropFirst()))
     case "devices": devices()
+    case "run": try run(Array(args.dropFirst()))
+    case "send-key": try sendKey(Array(args.dropFirst()))
     case "stream": try stream(Array(args.dropFirst()))
     case "replay": try replay(Array(args.dropFirst()))
     case "capture-input": try captureInput(Array(args.dropFirst()))
