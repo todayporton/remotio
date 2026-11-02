@@ -2,12 +2,12 @@
 import PackageDescription
 
 let package = Package(
-    name: "remote-input-mac",
+    name: "remotio",
     platforms: [.macOS(.v13)],
     products: [
         .library(name: "RemoteCore", targets: ["RemoteCore"]),
-        .executable(name: "remoteinput", targets: ["remoteinput"]),
-        .executable(name: "RemoteInputApp", targets: ["RemoteInputApp"]),
+        .executable(name: "remotio", targets: ["remotio"]),
+        .executable(name: "RemotioApp", targets: ["RemotioApp"]),
     ],
     targets: [
         .systemLibrary(
@@ -21,12 +21,12 @@ let package = Package(
             swiftSettings: [.swiftLanguageMode(.v5)]
         ),
         .executableTarget(
-            name: "remoteinput",
+            name: "remotio",
             dependencies: ["RemoteCore"],
             swiftSettings: [.swiftLanguageMode(.v5)]
         ),
         .executableTarget(
-            name: "RemoteInputApp",
+            name: "RemotioApp",
             dependencies: ["RemoteCore"],
             swiftSettings: [.swiftLanguageMode(.v5)]
         ),

@@ -10,7 +10,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
 }
 
 @main
-struct RemoteInputApp: App {
+struct RemotioApp: App {
     @NSApplicationDelegateAdaptor(AppDelegate.self) private var delegate
     @StateObject private var model = AppModel()
 
@@ -23,7 +23,7 @@ struct RemoteInputApp: App {
         }
         .menuBarExtraStyle(.window)
 
-        Window("Remote Input", id: "settings") {
+        Window("Remotio", id: "settings") {
             SettingsView(model: model)
                 .onAppear { delegate.model = model }
         }

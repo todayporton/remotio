@@ -37,7 +37,7 @@ public final class HIDRemote {
     private let seize: Bool
     private var device: IOHIDDevice?
     private let buffer = UnsafeMutablePointer<UInt8>.allocate(capacity: 1024)
-    private let writeQueue = DispatchQueue(label: "remoteinput.hid.write")
+    private let writeQueue = DispatchQueue(label: "remotio.hid.write")
     private let timebase: mach_timebase_info_data_t = {
         var t = mach_timebase_info_data_t()
         mach_timebase_info(&t)

@@ -1,14 +1,14 @@
 #!/bin/zsh
-# build/RemoteInput.app から配布用の build/RemoteInput.dmg を作る
+# build/Remotio.app から配布用の build/Remotio.dmg を作る
 set -euo pipefail
 cd "$(dirname "$0")/.."
 scripts/build-app.sh
-IDENTITY="${CODESIGN_IDENTITY:-Remote Input}"
+IDENTITY="${CODESIGN_IDENTITY:-Remotio}"
 STAGE="$(mktemp -d)"
 trap '/bin/rm -rf "$STAGE"' EXIT
-cp -R build/RemoteInput.app "$STAGE/"
+cp -R build/Remotio.app "$STAGE/"
 ln -s /Applications "$STAGE/Applications"
-/bin/rm -f build/RemoteInput.dmg
-hdiutil create -volname "Remote Input" -srcfolder "$STAGE" -format UDZO -ov build/RemoteInput.dmg
-codesign --force --sign "$IDENTITY" build/RemoteInput.dmg
-echo build/RemoteInput.dmg
+/bin/rm -f build/Remotio.dmg
+hdiutil create -volname "Remotio" -srcfolder "$STAGE" -format UDZO -ov build/Remotio.dmg
+codesign --force --sign "$IDENTITY" build/Remotio.dmg
+echo build/Remotio.dmg

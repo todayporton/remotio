@@ -1,4 +1,4 @@
-# Remote Input
+# Remotio
 
 Use Bluetooth remotes as input devices on your Mac.
 
@@ -19,23 +19,23 @@ root 権限、SIP の無効化、非公開 API は使いません。
 swift build
 swift test
 
-.build/debug/remoteinput probe                 # デバイス・権限・HID Descriptor を表示
-.build/debug/remoteinput listen                # Report とボタンイベントを表示
-.build/debug/remoteinput record --out test     # 音声ボタンを押している間を録音
-.build/debug/remoteinput decode captures/test.bin out.wav
+.build/debug/remotio probe                 # デバイス・権限・HID Descriptor を表示
+.build/debug/remotio listen                # Report とボタンイベントを表示
+.build/debug/remotio record --out test     # 音声ボタンを押している間を録音
+.build/debug/remotio decode captures/test.bin out.wav
 
-.build/debug/remoteinput devices               # オーディオデバイスの一覧
-.build/debug/remoteinput stream --device "BlackHole 2ch"   # 音声を指定デバイスへ出力
-.build/debug/remoteinput replay captures/test.bin --device "BlackHole 2ch"   # 経路の検証用
-.build/debug/remoteinput capture-input --device "BlackHole 2ch" --out in.wav # 経路の検証用
+.build/debug/remotio devices               # オーディオデバイスの一覧
+.build/debug/remotio stream --device "BlackHole 2ch"   # 音声を指定デバイスへ出力
+.build/debug/remotio replay captures/test.bin --device "BlackHole 2ch"   # 経路の検証用
+.build/debug/remotio capture-input --device "BlackHole 2ch" --out in.wav # 経路の検証用
 ```
 
 キー割り当ては `run` で使います。
 
 ```sh
-.build/debug/remoteinput run --dry-run                      # キーを送らず判定だけ表示
-.build/debug/remoteinput run --device "BlackHole 2ch"       # キー割り当て + 音声出力
-.build/debug/remoteinput run --config keymap.json           # 割り当てを変更
+.build/debug/remotio run --dry-run                      # キーを送らず判定だけ表示
+.build/debug/remotio run --device "BlackHole 2ch"       # キー割り当て + 音声出力
+.build/debug/remotio run --config keymap.json           # 割り当てを変更
 ```
 
 既定の割り当ては、方向キーが矢印、決定が Return、戻るが Escape、再生・停止が Space です。音声ボタンにもキーを割り当てられます。押している間はマイクが動き、キーも押され続けます。キーの解放は話し終わりの音声が届くよう 120ms 遅らせます。修飾キーだけの指定(`fn`、`ropt` など)もできます。`keymap.json` の例: `{"voice": "fn", "play_pause": "cmd+shift+p"}`。キー送信にはアクセシビリティの権限が必要です。`run` は割り当てたボタンと音声ボタンの元のキー入力を、`stream` は音声ボタン(Mac では Spotlight が開く)の元のキー入力を、`hidutil` の `UserKeyMapping` で対象リモコンに限って止めます(`--no-suppress` で無効)。
@@ -49,11 +49,11 @@ swift test
 ## メニューバーアプリ
 
 ```sh
-scripts/build-app.sh      # build/RemoteInput.app を作成(libopus を同梱)
-scripts/build-dmg.sh      # build/RemoteInput.dmg を作成
+scripts/build-app.sh      # build/Remotio.app を作成(libopus を同梱)
+scripts/build-dmg.sh      # build/Remotio.dmg を作成
 ```
 
-署名にはログインキーチェーンの自己署名証明書 `Remote Input` を使います。権限はこの署名に結びつくため、証明書と秘密鍵を失うと、利用者全員に権限の再許可が必要になります。キーチェーンアクセスから `.p12` として書き出し、安全な場所に保管してください。Git には入れないでください。
+署名にはログインキーチェーンの自己署名証明書 `Remotio` を使います。権限はこの署名に結びつくため、証明書と秘密鍵を失うと、利用者全員に権限の再許可が必要になります。キーチェーンアクセスから `.p12` として書き出し、安全な場所に保管してください。Git には入れないでください。
 
 配布した DMG のアプリは公証されていないため、初回の起動時に Gatekeeper にブロックされます。システム設定 > プライバシーとセキュリティ の「このまま開く」から許可します。
 
@@ -73,8 +73,8 @@ scripts/build-dmg.sh      # build/RemoteInput.dmg を作成
 | `Sources/RemoteCore/Files.swift` | WAV 書き出し、生 Report の記録、音声パケットの統計 |
 | `Sources/RemoteCore/KeyMapping.swift` | キー割り当て、キー送信 |
 | `Sources/RemoteCore/KeySuppressor.swift` | 対象リモコンの元のキー入力の無効化 |
-| `Sources/remoteinput/main.swift` | CLI |
-| `Sources/RemoteInputApp/` | メニューバーアプリ |
+| `Sources/remotio/main.swift` | CLI |
+| `Sources/RemotioApp/` | メニューバーアプリ |
 
 別のリモコンに対応するときは `RemoteProfile` を実装します。
 
