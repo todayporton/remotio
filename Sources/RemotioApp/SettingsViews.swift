@@ -104,7 +104,7 @@ struct SettingsView: View {
                 case .connection: ConnectionPage(model: model)
                 case .buttons: ButtonsPage(model: model)
                 case .permissions: PermissionsPage(model: model)
-                case .logs: LogsPage(model: model)
+                case .logs: LogsPage(store: model.logStore)
                 }
             }
             .frame(maxWidth: .infinity, maxHeight: .infinity)
@@ -881,17 +881,17 @@ struct PermissionsPage: View {
 // MARK: - ログ
 
 struct LogsPage: View {
-    @ObservedObject var model: AppModel
+    @ObservedObject var store: LogStore
 
     var body: some View {
         VStack(alignment: .leading, spacing: 18) {
             PageHeader(title: SettingsPage.logs.title) { EmptyView() }
             Card {
-                ScrollView {
-                    Text(model.logs.isEmpty ? String(localized: "まだログはありません。") : model.logs.joined(separator: "\n"))
-                        .font(.system(.caption, design: .monospaced))
-                        .textSelection(.enabled)
-                        .frame(maxWidth: .infinity, alignment: .leading)
+                if store.lines.isEmpty {
+                    Text("まだログはありません。").font(.callout).foregroundStyle(.secondary)
+                        .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .topLeading)
+                } else {
+                    LogTextView(lines: store.lines)
                 }
             }
         }

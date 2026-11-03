@@ -8,7 +8,8 @@ final class AppModel: ObservableObject {
     @Published private(set) var connected = false
     @Published private(set) var micOn = false
     @Published private(set) var outputDevices: [AudioDeviceInfo] = []
-    @Published private(set) var logs: [String] = []
+    /// ログ。ボタンを押すたびに増えるので、変更を設定画面全体へ伝えないよう別に持つ
+    let logStore = LogStore()
     @Published private(set) var startError: String?
     @Published private(set) var accessibilityGranted = KeyInjector.isTrusted
     @Published private(set) var inputMonitoringGranted = false
@@ -96,10 +97,7 @@ final class AppModel: ObservableObject {
     }
 
     private func log(_ message: String) {
-        let f = DateFormatter()
-        f.dateFormat = "HH:mm:ss"
-        logs.append("\(f.string(from: Date())) \(message)")
-        if logs.count > 300 { logs.removeFirst(logs.count - 300) }
+        logStore.append(message)
     }
 
     /// リモコンとの接続を始める。接続時に別プロセスの終了を待つ処理があり、起動処理の途中で走ると
