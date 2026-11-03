@@ -396,8 +396,9 @@ final class RemoteCoreTests: XCTestCase {
     private func gestureRouter(_ bindings: [String: String], clock: FakeClock,
                                posted: @escaping (String) -> Void) throws -> ButtonKeyRouter {
         let map = try KeyMap(bindings, standardKeys: ["mute": "media:mute"])
-        return ButtonKeyRouter(map: map, voiceButton: "voice", schedule: clock.schedule, repeatInterval: 0.1) {
-            posted("\($0.combo.text)\($0.isDown ? "↓" : "↑")")
+        return ButtonKeyRouter(map: map, voiceButton: "voice", voiceReleaseDelay: 0, schedule: clock.schedule,
+                               repeatInterval: 0.1, keyRepeatDelay: 0.4) {
+            posted("\($0.combo.text)\($0.isRepeat ? "↻" : $0.isDown ? "↓" : "↑")")
         }
     }
 
@@ -500,5 +501,38 @@ final class RemoteCoreTests: XCTestCase {
         XCTAssertEqual(merged, ["select": "space", "menu": "cmd+w", "tv.long": "b"])
         XCTAssertEqual(AppKeymaps.merge(global, nil), global)
         XCTAssertNoThrow(try KeyMap(merged))
+    }
+
+    func testHeldKeysRepeatLikeAKeyboard() throws {
+        let clock = FakeClock()
+        var log: [String] = []
+        let router = try gestureRouter(["select": "ctrl+t", "back": "fn", "menu": "dictation:ctrl", "tv": "media:volume_up"],
+                                       clock: clock) { log.append($0) }
+        // 通常のキーは、リピートまでの時間が過ぎると間隔ごとに押下を繰り返し、離すと止まる
+        router.process(ButtonEvent(name: "select", isDown: true)); clock.advance(to: 0.35)
+        XCTAssertEqual(log, ["ctrl+t↓"])
+        clock.advance(to: 0.65)
+        XCTAssertEqual(log, ["ctrl+t↓", "ctrl+t↻", "ctrl+t↻", "ctrl+t↻"])
+        router.process(ButtonEvent(name: "select", isDown: false)); clock.advance(to: 2)
+        XCTAssertEqual(log.last, "ctrl+t↑")
+        XCTAssertEqual(log.count, 5)
+
+        // 修飾キーだけと、音声入力の2回押しは繰り返さない
+        log = []
+        router.process(ButtonEvent(name: "back", isDown: true))
+        router.process(ButtonEvent(name: "menu", isDown: true)); clock.advance(to: 4)
+        XCTAssertEqual(log.filter { $0.hasSuffix("↻") }, [])
+
+        // メディアキーも繰り返す。切断したら止まる
+        log = []
+        router.process(ButtonEvent(name: "tv", isDown: true)); clock.advance(to: 4.45)
+        XCTAssertEqual(log, ["media:volume_up↓", "media:volume_up↻"])
+        router.releaseAll(); clock.advance(to: 6)
+        XCTAssertFalse(log.dropFirst(2).contains("media:volume_up↻"))
+
+        // 繰り返しのイベントは通常キーの押下だけで、修飾キーは押したまま
+        let repeatEvents = KeyAction(combo: try KeyCombo("ctrl+t"), isDown: true, isRepeat: true).events
+        XCTAssertEqual(repeatEvents, [InjectedKeyEvent(kind: .keyDown, keyCode: 17,
+                                                       flags: CGEventFlags.maskControl.rawValue | 0x1)])
     }
 }

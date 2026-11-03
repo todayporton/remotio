@@ -11,6 +11,8 @@ public enum GestureTiming {
     public static let doublePress: TimeInterval = 0.3
     /// リピートの間隔。Mac のキーリピートの設定に合わせる
     public static var repeatInterval: TimeInterval { NSEvent.keyRepeatInterval }
+    /// 押し続けてからリピートが始まるまでの時間。Mac のキーリピートの設定に合わせる
+    public static var repeatDelay: TimeInterval { NSEvent.keyRepeatDelay }
 
     public static let mainQueue: GestureScheduler = { delay, work in
         let item = DispatchWorkItem(block: work)

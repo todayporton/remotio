@@ -324,11 +324,19 @@ public struct KeyMap: Sendable {
 public struct KeyAction: Equatable, Sendable {
     public let combo: KeyCombo
     public let isDown: Bool
+    /// 押し続けたときの繰り返し(キーボードのキーリピートと同じ)
+    public let isRepeat: Bool
 
-    public init(combo: KeyCombo, isDown: Bool) {
+    public init(combo: KeyCombo, isDown: Bool, isRepeat: Bool = false) {
         self.combo = combo
         self.isDown = isDown
+        self.isRepeat = isRepeat
     }
+}
+
+public extension KeyCombo {
+    /// 押し続けたときに繰り返すか。修飾キーだけのものと、音声入力の2回押しは繰り返さない
+    var repeatsWhileHeld: Bool { modifierOnlyFlag == nil && !isDoubleTap }
 }
 
 /// ボタンイベントをキー操作へ変換する。押しっぱなしのまま残らないよう押下中のキーを覚える。
@@ -364,13 +372,22 @@ public final class ButtonKeyRouter {
     private var pending: (work: DispatchWorkItem, action: KeyAction)?
     /// 長押しか2回押しを割り当てたボタンの判定。音声ボタンは Push-to-Talk を保つため対象外
     private var recognizers: [String: GestureRecognizer] = [:]
+    private let schedule: GestureScheduler
+    private let keyRepeatDelay: TimeInterval
+    private let keyRepeatInterval: TimeInterval
+    /// 押し続けているボタンのキーリピートを止める関数
+    private var repeating: [String: () -> Void] = [:]
 
     /// voiceReleaseDelay の既定値は出力前の待機(60ms)と到着のゆらぎ(実測で最大約43ms)の合計に余裕を持たせた値。
     public init(map: KeyMap, voiceButton: String, voiceReleaseDelay: TimeInterval = 0.12,
                 schedule: @escaping GestureScheduler = GestureTiming.mainQueue,
                 repeatInterval: TimeInterval = GestureTiming.repeatInterval,
+                keyRepeatDelay: TimeInterval = GestureTiming.repeatDelay,
                 post: @escaping (KeyAction) -> Void) {
         mapper = KeyMapper(map: map)
+        self.schedule = schedule
+        self.keyRepeatDelay = keyRepeatDelay
+        keyRepeatInterval = repeatInterval
         self.voiceButton = voiceButton
         self.voiceReleaseDelay = voiceReleaseDelay
         self.post = post
@@ -388,6 +405,7 @@ public final class ButtonKeyRouter {
             return
         }
         guard let action = mapper.process(event) else { return }
+        if !event.isDown { stopRepeating(event.name) }
         if event.name == voiceButton && !event.isDown {
             let work = DispatchWorkItem { [weak self] in self?.flushPending() }
             pending = (work, action)
@@ -395,10 +413,27 @@ public final class ButtonKeyRouter {
         } else {
             post(action)
         }
+        if event.isDown && action.combo.repeatsWhileHeld {
+            repeating[event.name] = schedule(keyRepeatDelay) { [weak self] in
+                self?.repeatKey(event.name, action.combo)
+            }
+        }
+    }
+
+    /// キーボードと同じく、押し続けている間は一定の間隔で押下を繰り返す
+    private func repeatKey(_ button: String, _ combo: KeyCombo) {
+        post(KeyAction(combo: combo, isDown: true, isRepeat: true))
+        repeating[button] = schedule(keyRepeatInterval) { [weak self] in self?.repeatKey(button, combo) }
+    }
+
+    private func stopRepeating(_ button: String) {
+        repeating.removeValue(forKey: button)?()
     }
 
     /// 切断時や終了時に呼ぶ。押下中のキーをすべて解放する。
     public func releaseAll() {
+        repeating.values.forEach { $0() }
+        repeating.removeAll()
         flushPending()
         recognizers.values.forEach { $0.reset() }
         mapper.releaseAll().forEach(post)
@@ -426,6 +461,15 @@ public extension KeyAction {
     /// 例: ctrl+t の押下は ctrl(flagsChanged) → t(keyDown)、解放は t(keyUp) → ctrl(flagsChanged)。
     var events: [InjectedKeyEvent] {
         if combo.mediaKey != nil { return [] }
+        if isRepeat {
+            // 繰り返しは通常キーの押下だけ。修飾キーは押したまま
+            var held: UInt64 = 0
+            for (flag, keyCode) in KeyCombo.modifierKeyCodes where combo.flags & flag.rawValue != 0 {
+                held |= flag.rawValue | KeyCombo.sideFlag(for: keyCode)
+            }
+            return [InjectedKeyEvent(kind: .keyDown, keyCode: combo.keyCode,
+                                     flags: held | KeyCombo.hardwareFlags(for: combo.keyCode))]
+        }
         if combo.isDoubleTap, let flag = combo.modifierOnlyFlag {
             let down = flag | KeyCombo.sideFlag(for: combo.keyCode)
             let tap = [InjectedKeyEvent(kind: .flagsChanged, keyCode: combo.keyCode, flags: down),
@@ -478,27 +522,30 @@ public enum KeyInjector {
         let events = action.events
         let mediaKey = action.combo.mediaKey
         let isDown = action.isDown
+        let isRepeat = action.isRepeat
         queue.async {
-            if let mediaKey { postMediaKey(mediaKey, isDown: isDown) }
+            if let mediaKey { postMediaKey(mediaKey, isDown: isDown, isRepeat: isRepeat) }
             for (index, item) in events.enumerated() {
                 if index > 0 { usleep(eventInterval) }
                 guard let event = CGEvent(keyboardEventSource: source, virtualKey: item.keyCode,
                                           keyDown: item.kind == .keyDown) else { continue }
                 if item.kind == .flagsChanged { event.type = .flagsChanged }
                 event.flags = CGEventFlags(rawValue: item.flags)
+                if isRepeat { event.setIntegerValueField(.keyboardEventAutorepeat, value: 1) }
                 event.post(tap: .cghidEventTap)
             }
         }
     }
 
     /// メディアキーはキーボードイベントではなく、システム定義のイベントとして送る
-    private static func postMediaKey(_ key: Int32, isDown: Bool) {
+    private static func postMediaKey(_ key: Int32, isDown: Bool, isRepeat: Bool) {
         let state = isDown ? 0xA : 0xB
+        // data1 の最下位 bit がリピートの印(実際のキーボードと同じ)
         let event = NSEvent.otherEvent(
             with: .systemDefined, location: .zero,
             modifierFlags: NSEvent.ModifierFlags(rawValue: UInt(state) << 8),
             timestamp: 0, windowNumber: 0, context: nil, subtype: 8,
-            data1: Int(key) << 16 | state << 8, data2: -1)
+            data1: Int(key) << 16 | state << 8 | (isRepeat ? 1 : 0), data2: -1)
         event?.cgEvent?.post(tap: .cghidEventTap)
     }
 
