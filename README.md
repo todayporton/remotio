@@ -1,194 +1,196 @@
 # Remotio
 
+**English** | [日本語](README.ja.md)
+
 Use Bluetooth remotes as input devices on your Mac.
 
-Bluetooth リモコンを、Mac のワイヤレスマイク兼コントローラーとして使うアプリです。現在の対応機種は、Fire TV Stick 4K 付属の Alexa 音声認識リモコンです。Amazon とは関係のない非公式のプロジェクトです。
+Remotio turns a Bluetooth remote into a wireless microphone and controller for your Mac. It currently supports the Alexa Voice Remote that comes with the Fire TV Stick 4K. This is an unofficial project and is not affiliated with Amazon.
 
-> **アルファ版です。** 動作確認は限られた環境でしか行っていません。設定の形式や動作は今後変わる場合があります。
+> **This is an alpha release.** It has only been tested in a limited set of environments. The settings format and behavior may change.
 
-## インストール
+## Installation
 
-動作環境: Apple Silicon の Mac、macOS 13 以降、Mac とペアリング済みの対応リモコン
+Requirements: an Apple silicon Mac, macOS 13 or later, and a supported remote paired with the Mac
 
-1. [Releases](https://github.com/todayporton/remotio/releases) から `Remotio.dmg` をダウンロードし、`Remotio.app` を「アプリケーション」フォルダへ入れます。
-2. アプリを開きます。Apple の公証を受けていないので、最初はブロックされます。「完了」を押してから、システム設定 > プライバシーとセキュリティ の「このまま開く」を押し、管理者パスワードを入力します。ソースコードを確認してから開くことをおすすめします。
-3. セットアップの案内が開くので、順番に進めます。権限の許可、リモコンのペアリング、仮想マイクのインストールを行います。仮想マイクのインストールには管理者パスワードが必要で、処理の間は Mac の音声が一瞬止まります。案内は、メニューバーのアイコンの「セットアップを開く…」からいつでも開けます。
-4. 音声入力を使うアプリで、入力に「Remotio Microphone」を選びます。
-5. メニューバーのアイコンの「設定とログを開く…」から「ボタン」を開き、音声ボタンなどにキーを割り当てます。音声入力アプリの Push-to-Talk のキーを、音声ボタンに割り当てて使えます。各ボタンの手のアイコンから、長押しと2回押しにも操作を割り当てられます。画面上部の「既定」からアプリを追加すると、そのアプリが前面にあるときだけ使う割り当てを作れます。アプリで変えていない項目は「既定」と表示され、既定の割り当てに従います。メニューの「URL を開く…」「シェルコマンドを実行…」で、キーの代わりに URL(Raycast の URL など)を開いたり、シェルコマンドを実行したりもできます。
+1. Download `Remotio.dmg` from [Releases](https://github.com/todayporton/remotio/releases) and move `Remotio.app` to the Applications folder.
+2. Open the app. It isn't notarized by Apple, so macOS blocks it the first time. Click Done, then click Open Anyway in System Settings > Privacy & Security and enter an administrator password. We recommend reviewing the source code before you open it.
+3. The setup guide opens. Work through it in order: grant permissions, pair the remote, and install the virtual microphone. Installing the virtual microphone needs an administrator password, and the Mac's audio pauses briefly while it installs. You can open the guide at any time with Open Setup… from the menu bar icon.
+4. In the app you want to dictate into, choose "Remotio Microphone" as the input.
+5. Choose Open Settings and Logs… from the menu bar icon, open Buttons, and assign keys to the voice button and other buttons. You can assign a dictation app's push-to-talk key to the voice button. Use the hand icon next to each button to also assign actions to a long press and a double press. Add an app from the Global menu at the top of the page to create assignments that apply only while that app is in front. Items you haven't changed for an app show "Global" and follow the global assignments. With Open URL… and Run Shell Command… in the menu, a button can open a URL (such as a Raycast URL) or run a shell command instead of sending a key.
 
-macOS の音声入力を使う場合は、システム設定 > キーボード > 音声入力 のマイクに「Remotio Microphone」を選びます。音声ボタンの操作で「音声入力」から、同じ画面の「ショートカット」と同じものを選ぶと、押したときに音声入力が始まり、離したときに終わります。
+To use macOS Dictation, choose "Remotio Microphone" as the microphone in System Settings > Keyboard > Dictation. In the voice button's menu, under Dictation, choose the same shortcut as Shortcut on that settings page. Dictation then starts when you press the button and stops when you release it.
 
-音声はすべて Mac の中で処理され、外部へ送信しません。システムの既定の入出力デバイスは変更しません。
+All audio is processed on your Mac and is never sent anywhere. Remotio doesn't change the system's default input and output devices.
 
-リモコンは、システム設定の Bluetooth でペアリングします。Fire TV とのペアリングは解除される場合があります。
+Pair the remote in the Bluetooth section of System Settings. This may unpair it from your Fire TV.
 
-設定画面とセットアップの案内は、コマンドでも開けます。
-
-```bash
-open "remotio://settings"              # 設定画面
-open "remotio://settings/connection"   # ページを指定する(connection、buttons、permissions、logs)
-open "remotio://setup"                 # セットアップの案内
-```
-
-### アンインストール
-
-「接続と音声」で仮想マイクの「アンインストール」を押してから、アプリを削除します。
-
-## 開発
-
-ここから先は開発者向けの情報です。
-
-### 必要なもの
-
-- Apple Silicon Mac / macOS 13 以降 / Xcode
-- `brew install opus`(ビルド時のみ)
-- macOS の Bluetooth 設定でペアリング済みのリモコン
-- 実行元のターミナルに対する「入力監視」の権限
-
-root 権限、SIP の無効化、非公開 API は使いません。
-
-### 翻訳
-
-アプリの表示は日本語と英語に対応しています。Mac の言語設定に合わせて切り替わり、どちらでもない場合は英語になります。
-
-翻訳ファイルは `Resources/Localization` にあり、ソースから自動で作ります。表示する文言は SwiftUI の文字列か `String(localized:)` で書きます。
+You can also open the settings window and the setup guide from the command line.
 
 ```bash
-scripts/update-strings.py            # 文言を抜き出し、翻訳ファイルを更新する(英語の未訳には TODO が付く)
-# Resources/Localization/en-translations.py に英語の訳を追加してから
-scripts/fill-english.py              # 英語の訳を反映する
-scripts/update-strings.py --check    # 英語の訳の不足と、使われていない訳を確認する
+open "remotio://settings"              # Settings window
+open "remotio://settings/connection"   # A specific page (connection, buttons, permissions, logs)
+open "remotio://setup"                 # Setup guide
 ```
 
-## 使い方
+### Uninstalling
+
+Click Uninstall for the virtual microphone in Connection & Audio, then delete the app.
+
+## Development
+
+The rest of this document is for developers.
+
+### Requirements
+
+- Apple silicon Mac / macOS 13 or later / Xcode
+- `brew install opus` (needed only to build)
+- A remote paired in the macOS Bluetooth settings
+- Input Monitoring permission for the terminal you run from
+
+Remotio doesn't use root privileges, doesn't require disabling SIP, and doesn't use private APIs.
+
+### Translation
+
+The app is available in Japanese and English. It follows the Mac's language settings and falls back to English for other languages.
+
+The translation files are in `Resources/Localization` and are generated from the source. Write user-facing text as SwiftUI strings or with `String(localized:)`.
+
+```bash
+scripts/update-strings.py            # Extract strings and update the translation files (missing English gets a TODO)
+# Add English translations to Resources/Localization/en-translations.py, then
+scripts/fill-english.py              # Apply the English translations
+scripts/update-strings.py --check    # Check for missing English and unused translations
+```
+
+## Usage
 
 ```sh
 swift build
 swift test
 
-.build/debug/remotio probe                 # デバイス・権限・HID Descriptor を表示
-.build/debug/remotio listen                # Report とボタンイベントを表示
-.build/debug/remotio record --out test     # 音声ボタンを押している間を録音
+.build/debug/remotio probe                 # Show devices, permissions, and the HID descriptor
+.build/debug/remotio listen                # Show reports and button events
+.build/debug/remotio record --out test     # Record while the voice button is held
 .build/debug/remotio decode captures/test.bin out.wav
 
-.build/debug/remotio devices               # オーディオデバイスの一覧
-.build/debug/remotio stream --device "Remotio Microphone"   # 音声を指定デバイスへ出力
-.build/debug/remotio replay captures/test.bin --device "Remotio Microphone"   # 経路の検証用
-.build/debug/remotio capture-input --device "Remotio Microphone" --out in.wav # 経路の検証用
+.build/debug/remotio devices               # List audio devices
+.build/debug/remotio stream --device "Remotio Microphone"   # Send audio to a device
+.build/debug/remotio replay captures/test.bin --device "Remotio Microphone"   # For testing the audio path
+.build/debug/remotio capture-input --device "Remotio Microphone" --out in.wav # For testing the audio path
 ```
 
-キー割り当ては `run` で使います。
+Use `run` for key assignments.
 
 ```sh
-.build/debug/remotio run --dry-run                      # キーを送らず判定だけ表示
-.build/debug/remotio run --device "Remotio Microphone"       # キー割り当て + 音声出力
-.build/debug/remotio run --config keymap.json           # 割り当てを変更
+.build/debug/remotio run --dry-run                      # Show what would be sent without sending keys
+.build/debug/remotio run --device "Remotio Microphone"       # Key assignments + audio output
+.build/debug/remotio run --config keymap.json           # Use different assignments
 ```
 
-既定の割り当ては、方向キーが矢印、決定が Return、戻るが Escape です。指定のないボタンは Mac の標準動作をそのまま通します。`none` で無効、`media:play_pause` などでメディア操作、`system:mission_control` などでシステム操作を指定できます。音声ボタンにもキーを割り当てられます。押している間はマイクが動き、キーも押され続けます。キーの解放は話し終わりの音声が届くよう 120ms 遅らせます。修飾キーだけの指定(`fn`、`ropt` など)もできます。`keymap.json` の例: `{"voice": "fn", "play_pause": "cmd+shift+p"}`。キー送信にはアクセシビリティの権限が必要です。`run` は割り当てたボタンと音声ボタンの元のキー入力を、`stream` は音声ボタン(Mac では Spotlight が開く)の元のキー入力を、`hidutil` の `UserKeyMapping` で対象リモコンに限って止めます(`--no-suppress` で無効)。
+By default, the direction buttons send the arrow keys, select sends Return, and back sends Escape. Buttons without an assignment keep the Mac's standard behavior. Use `none` to disable a button, values such as `media:play_pause` for media controls, and values such as `system:mission_control` for system actions. The voice button can have a key too: while you hold it, the microphone is on and the key stays pressed. The key release is delayed by 120 ms so the end of your speech still arrives. You can also assign a modifier key alone (`fn`, `ropt`, and so on). Example `keymap.json`: `{"voice": "fn", "play_pause": "cmd+shift+p"}`. Sending keys requires Accessibility permission. `run` stops the original key input of assigned buttons and the voice button, and `stream` stops the original key input of the voice button (which opens Spotlight on a Mac). Both use `hidutil`'s `UserKeyMapping`, limited to the remote (`--no-suppress` turns this off).
 
-`stream` の出力先は `--device` での指定が必須です。システムの既定デバイスは変更しません。他のアプリでは、入力デバイスとして Remotio Microphone を選びます。
+`stream` requires an output device with `--device`. It doesn't change the system's default devices. In other apps, choose Remotio Microphone as the input device.
 
-`record` は音声ボタンを離すと終了し、`captures/` に `.wav` と生 Report の `.bin` を保存します。`captures/` には音声が残るため、Git の管理対象外にしています。
+`record` stops when you release the voice button and saves a `.wav` and a `.bin` of raw reports in `captures/`. Because `captures/` holds audio, it is excluded from Git.
 
-`listen` / `record` では、ボタン入力は Mac 側にも通常のキー入力として届きます。`--seize`(占有モード)は一般ユーザーでは `kIOReturnNotPrivileged` で失敗します。
+With `listen` and `record`, button presses also reach the Mac as normal key input. `--seize` (exclusive mode) fails with `kIOReturnNotPrivileged` for regular users.
 
-## メニューバーアプリ
+## Menu bar app
 
 ```sh
-scripts/build-app.sh      # build/Remotio.app を作成(libopus を同梱)
-scripts/build-dmg.sh      # build/Remotio.dmg を作成
+scripts/build-app.sh      # Build build/Remotio.app (bundles libopus)
+scripts/build-dmg.sh      # Build build/Remotio.dmg
 ```
 
-署名にはログインキーチェーンの自己署名証明書 `todayporton` を使います。権限はこの署名に結びつくため、証明書と秘密鍵を失うと、利用者全員に権限の再許可が必要になります。キーチェーンアクセスから `.p12` として書き出し、安全な場所に保管してください。Git には入れないでください。
+The app is signed with the self-signed certificate `todayporton` in the login keychain. Permissions are tied to this signature, so if the certificate and private key are lost, every user has to grant permissions again. Export them as a `.p12` from Keychain Access and keep it somewhere safe. Don't put it in Git.
 
-配布した DMG のアプリは公証されていないため、初回の起動時に Gatekeeper にブロックされます。システム設定 > プライバシーとセキュリティ の「このまま開く」から許可します。隔離属性を付けた DMG を使い、VM で起動とドライバのインストール、アンインストールまで確認済みです。
+The app in the distributed DMG isn't notarized, so Gatekeeper blocks it on first launch. Allow it with Open Anyway in System Settings > Privacy & Security. Launching, installing the driver, and uninstalling it have been tested in a VM with a quarantined DMG.
 
-仮想マイク `Remotio Microphone` のドライバを同梱しています。「接続と音声」の「インストール」から、`/Library/Audio/Plug-Ins/HAL` へ入れます。管理者パスワードが必要で、処理の間は Mac の音声が一瞬止まります。BlackHole は不要です。ドライバは入力の一覧にだけ出て、出力の一覧には出ません。Remotio は隠しデバイスを通して音声を渡します。BlackHole などを使いたい場合は「他の出力デバイスを使う」で選べます。ホストの実機で、出力の一覧に出ないこと、リモコンの音声がこのデバイス経由で他のアプリへ届くこと、署名が同じなら再ビルド後も権限が維持されることを確認済みです。
+The driver for the virtual microphone `Remotio Microphone` is included. Install it to `/Library/Audio/Plug-Ins/HAL` with Install in Connection & Audio. It requires an administrator password, and the Mac's audio pauses briefly while it installs. BlackHole isn't needed. The driver appears only in the input list, not the output list; Remotio passes audio through a hidden device. To use BlackHole or another device instead, choose it with Use another output device. On a real Mac, we've confirmed that the driver doesn't appear in the output list, that the remote's audio reaches other apps through it, and that permissions survive a rebuild as long as the signature stays the same.
 
-接続状態とマイク状態の表示、音声の出力先の選択、リモコン図を使ったキー割り当て(キーを押して記録)、権限の確認、ログ表示、ログイン時の起動の設定ができます。リモコン図のボタン配置は実機と一致するとは限りません。出力先の初期値は「なし」です。入力監視の権限が必要で、キー送信にはアクセシビリティの権限も必要です。
+The app shows the connection and microphone status, lets you choose the audio output, assign keys on a drawing of the remote (press a key to record it), check permissions, view logs, and open the app at login. The button layout in the drawing may not exactly match the real remote. The output defaults to None. The app needs Input Monitoring permission, and sending keys also needs Accessibility permission.
 
-## 構成
+## Structure
 
-| パス | 役割 |
+| Path | Role |
 |---|---|
-| `Sources/RemoteCore/HIDRemote.swift` | IOHIDManager によるデバイス接続、Report 受信、マイク制御 |
-| `Sources/RemoteCore/HIDReportDescriptor.swift` | HID Descriptor の解析 |
-| `Sources/RemoteCore/RemoteProfile.swift` | 機種ごとの差分(`RemoteProfile`)、ボタン判定、音声ボタンとマイクの連動 |
-| `Sources/RemoteCore/OpusDecoder.swift` | libopus のラッパー |
-| `Sources/RemoteCore/VoiceSession.swift` | ボタン監視、マイク連動、デコードのまとめ |
-| `Sources/RemoteCore/PCMOutput.swift` | 指定デバイスへの PCM 出力 |
-| `Sources/RemoteCore/AudioDevices.swift` | オーディオデバイスの列挙、検証用の入力録音 |
-| `Sources/RemoteCore/Files.swift` | WAV 書き出し、生 Report の記録、音声パケットの統計 |
-| `Sources/RemoteCore/KeyMapping.swift` | キー割り当て、キー送信 |
-| `Sources/RemoteCore/KeySuppressor.swift` | 対象リモコンの元のキー入力の無効化 |
+| `Sources/RemoteCore/HIDRemote.swift` | Device connection through IOHIDManager, receiving reports, microphone control |
+| `Sources/RemoteCore/HIDReportDescriptor.swift` | HID descriptor parsing |
+| `Sources/RemoteCore/RemoteProfile.swift` | Per-model differences (`RemoteProfile`), button decoding, linking the voice button to the microphone |
+| `Sources/RemoteCore/OpusDecoder.swift` | libopus wrapper |
+| `Sources/RemoteCore/VoiceSession.swift` | Ties together button monitoring, the microphone, and decoding |
+| `Sources/RemoteCore/PCMOutput.swift` | PCM output to a chosen device |
+| `Sources/RemoteCore/AudioDevices.swift` | Listing audio devices, recording input for testing |
+| `Sources/RemoteCore/Files.swift` | WAV writing, raw report recording, audio packet statistics |
+| `Sources/RemoteCore/KeyMapping.swift` | Key assignments and sending keys |
+| `Sources/RemoteCore/KeySuppressor.swift` | Stopping the remote's original key input |
 | `Sources/remotio/main.swift` | CLI |
-| `Sources/RemotioApp/` | メニューバーアプリ |
+| `Sources/RemotioApp/` | Menu bar app |
 
-別のリモコンに対応するときは `RemoteProfile` を実装します。
+To support another remote, implement `RemoteProfile`.
 
-## アクセス方式
+## How it accesses the remote
 
-公開 API の **IOHIDManager / IOHIDDevice** を使います。macOS はこのリモコンを `IOHIDUserDevice` として公開し、Descriptor にも音声用の Report が含まれているため、既存のペアリングと Bluetooth 接続を維持したまま読み書きできました。CoreBluetooth と HCI への直接アクセスは使っていません。
+Remotio uses the public **IOHIDManager / IOHIDDevice** APIs. macOS exposes this remote as an `IOHIDUserDevice`, and its descriptor includes the audio reports, so Remotio can read and write it while keeping the existing pairing and Bluetooth connection. It doesn't use CoreBluetooth or direct HCI access.
 
-## 実機で確認した仕様
+## Behavior confirmed on real hardware
 
-対象: VID `0x0171` / PID `0x042F` / FW `53305501` / macOS 26.2(2026-11-02 に1回録音)
+Device: VID `0x0171` / PID `0x042F` / FW `53305501` / macOS 26.2 (one recording on 2026-11-02)
 
-| 項目 | 結果 |
+| Item | Result |
 |---|---|
-| 音声データ | Input Report `0xF0`、payload 80B、TOC は常に `0xB8` |
-| マイク制御 | Output Report `0xF2`。`0x01` で開始、`0x00` で停止(どちらも SetReport 成功) |
-| 手順 | 音声ボタンの押下(`0x02` の `21 02`)を受けてから `0xF2=0x01` を送信 |
-| 音声 | Opus 16kHz mono として 123 パケットすべてデコード成功(2.46 秒) |
-| 到着間隔 | 間隔20ms換算の推定欠落 0、最大間隔 43.2ms |
-| 権限 | `RequiresTCCAuthorization = True`。今回の環境は入力監視が許可済み |
+| Audio data | Input report `0xF0`, 80-byte payload, TOC always `0xB8` |
+| Microphone control | Output report `0xF2`. `0x01` starts and `0x00` stops (SetReport succeeds for both) |
+| Sequence | Send `0xF2=0x01` after receiving the voice button press (`21 02` in `0x02`) |
+| Audio | All 123 packets decoded as Opus 16 kHz mono (2.46 seconds) |
+| Arrival interval | 0 estimated drops assuming 20 ms intervals, longest interval 43.2 ms |
+| Permissions | `RequiresTCCAuthorization = True`. Input Monitoring was already granted in this environment |
 
-その他の Report(Descriptor 上の定義のみ、内容は未確認): `0x03`(1B)、`0xEF`(3B)、`0xF1`(3B)、`0xF3`(出力 10B)
+Other reports (defined in the descriptor only; contents not examined): `0x03` (1 byte), `0xEF` (3 bytes), `0xF1` (3 bytes), `0xF3` (10-byte output)
 
-### ボタン
+### Buttons
 
-押下と解放の両方を確認済み:
+Both press and release confirmed:
 
-| ボタン | Report | コード |
+| Button | Report | Code |
 |---|---|---|
-| 上 / 下 / 左 / 右 | `0x01` | `52` / `51` / `50` / `4F` |
-| 決定 | `0x01` | `58` |
-| 戻る | `0x01` | `F1` |
-| 再生・停止 | `0x02` | `CD 00` |
-| 音声 | `0x02` | `21 02` |
+| Up / Down / Left / Right | `0x01` | `52` / `51` / `50` / `4F` |
+| Select | `0x01` | `58` |
+| Back | `0x01` | `F1` |
+| Play/Pause | `0x02` | `CD 00` |
+| Voice | `0x02` | `21 02` |
 
-### 音声経路(リモコン → `stream` → BlackHole 2ch → 入力側で録音)
+### Audio path (remote → `stream` → BlackHole 2ch → recorded on the input side)
 
-| 項目 | 結果 |
+| Item | Result |
 |---|---|
-| 発話 | 2回連続で成功(13.3 秒、6.4 秒) |
-| パケット | 985 個(19.7 秒相当)、デコードエラー 0 |
-| 途切れ | 入力側の音声に 5ms 以上の無音なし |
-| 既定の入出力デバイス | 変更なし |
-| 音声ボタン押下からマイク有効化の完了まで | 約 30ms(話してから届くまでの遅延は未計測) |
+| Speech | Two takes in a row succeeded (13.3 and 6.4 seconds) |
+| Packets | 985 (19.7 seconds' worth), 0 decode errors |
+| Gaps | No silence of 5 ms or more in the input audio |
+| Default input and output devices | Unchanged |
+| From pressing the voice button to the microphone being on | About 30 ms (latency from speaking to arrival not measured) |
 
-## 未検証・既知の制限
+## Untested and known limitations
 
-- 録音した音声を人の耳で確認した結果は未記録です(信号レベルは発話らしい変化を確認済み)。
-- 約 13 秒を超える録音と、話してから届くまでの遅延は未計測です。
-- 欠落の値は到着時刻からの推定です。payload 内にシーケンス番号があるかは確認していません。
-- 音声ボタンの Push-to-Talk は、Amical(`Ctrl+T`)で文字入力まで確認済みです。修飾キー単体の送信は実機で未検証です。
-- 元のキー入力の無効化は、方向キー、決定(カーソルが動かないことを確認)と音声ボタン(Spotlight が開かないことを確認)について実機で確認済みです。戻る、再生・停止の Mac 側の挙動は個別に見ていません。割り当てのないボタンのキー入力は Mac に届きます。
-- 設定画面を操作している間は、リモコンから割り当てたキーを送りません(実機で未検証)。キー入力の待ち受け中は、他のアプリより先にキーを受け取り、後ろへ送りません(アクセシビリティの権限が必要。権限がなければアプリ内のみで受け取ります)。
-- メニューバーアプリは VM で GUI のみ確認しました(リモコンなし、音声なし)。ホストでの実機確認では、リモコンからのキー送信と、BlackHole を入力にしたアプリへの音声の受け渡しが動作しました。ログイン時の自動起動の実機確認は未検証です。
-- 出力先のサンプルレートが変わると音声出力を自動で再開します。再開の間に話した音声は失われます。
-- プログラムが異常終了すると、元のキー入力の無効化はリモコンが再接続するまで残ります。
+- No one has yet listened to the recorded audio and recorded the result (the signal level changes as expected for speech).
+- Recordings longer than about 13 seconds and the latency from speaking to arrival haven't been measured.
+- Drop counts are estimated from arrival times. We haven't checked whether the payload contains a sequence number.
+- Push-to-talk on the voice button has been confirmed with Amical (`Ctrl+T`) through to text input. Sending a modifier key alone hasn't been tested on real hardware.
+- Stopping the original key input has been confirmed on real hardware for the direction buttons, select (the cursor doesn't move), and the voice button (Spotlight doesn't open). The Mac's behavior for back and play/pause hasn't been checked individually. Key input from buttons without an assignment reaches the Mac.
+- While you use the settings window, assigned keys aren't sent from the remote (not tested on real hardware). While waiting for a key to record, Remotio receives keys before other apps and doesn't pass them on (requires Accessibility permission; without it, only keys within the app are received).
+- The menu bar app's GUI has been checked only in a VM (no remote, no audio). On a real Mac, sending keys from the remote and passing audio to an app using BlackHole as its input both worked. Opening at login hasn't been tested on real hardware.
+- If the output device's sample rate changes, audio output restarts automatically. Speech during the restart is lost.
+- If the program crashes, the stopped key input stays in effect until the remote reconnects.
 
-## 参考
+## Credits
 
-- [fire-remote-client](https://github.com/justanotheruseer/fire-remote-client)(MIT): プロトコルとボタンのコード表を参考にしました。
-- [SayAll / remote-mic-app](https://github.com/HD838A/remote-mic-app)(GPL-3.0): 設計資料のみ確認し、コードは流用していません。
-- [libopus](https://opus-codec.org/)(BSD): 動的リンクで使用します。
+- [fire-remote-client](https://github.com/justanotheruseer/fire-remote-client) (MIT): Used as a reference for the protocol and the button code table.
+- [SayAll / remote-mic-app](https://github.com/HD838A/remote-mic-app) (GPL-3.0): Only the design documents were reviewed; no code was reused.
+- [libopus](https://opus-codec.org/) (BSD): Dynamically linked.
 
-## ライセンス
+## License
 
-MIT — [LICENSE](LICENSE) を参照してください。同梱するサードパーティのソフトウェア:
+MIT — see [LICENSE](LICENSE). Bundled third-party software:
 
-- libopus: BSD ライセンス
-- libASPL(`Vendor/libASPL`、commit `633e0f7`): MIT ライセンス。一部に Apple のサンプルコードのライセンスが含まれます
+- libopus: BSD license
+- libASPL (`Vendor/libASPL`, commit `633e0f7`): MIT license. Parts are under Apple's sample code license
