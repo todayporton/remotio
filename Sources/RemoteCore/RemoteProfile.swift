@@ -15,7 +15,10 @@ public struct ButtonEvent: Equatable, Sendable {
 public protocol RemoteProfile: Sendable {
     var displayName: String { get }
     var vendorID: Int { get }
-    var productID: Int { get }
+    /// 同じボタン配置と音声の送り方を持つ製品の ID(互換品を含む)
+    var productIDs: [Int] { get }
+    /// 製品 ID ごとの表示名。なければ nil(デバイスが名乗る名前を使う)
+    func modelName(productID: Int) -> String?
     var voiceButtonName: String { get }
     /// Descriptor から音声・マイク制御の Report を特定する。不明なら nil。
     func voiceReports(in reports: [HIDReportInfo]) -> VoiceReports?
@@ -41,7 +44,17 @@ public struct FireTVRemoteProfile: RemoteProfile {
 
     public let displayName = "Amazon Remote"
     public let vendorID = 0x0171
-    public let productID = 0x042F
+    /// 0x042F は Fire TV Stick 4K 付属リモコン、0x0425 は Amazon Remote Pro の互換品(実機で確認)。
+    /// どちらも Report Descriptor が同じ
+    public let productIDs = [0x042F, 0x0425]
+
+    public func modelName(productID: Int) -> String? {
+        switch productID {
+        case 0x042F: return "Amazon Remote"
+        case 0x0425: return "Amazon Remote Pro"
+        default: return nil
+        }
+    }
     public let voiceButtonName = "voice"
 
     static let keyboard: [UInt16: String] = [
@@ -52,6 +65,9 @@ public struct FireTVRemoteProfile: RemoteProfile {
         0x0221: "voice", 0x0223: "home", 0x0224: "back", 0x0040: "menu", 0x00E2: "mute",
         0x00E9: "volume_up", 0x00EA: "volume_down", 0x00CD: "play_pause",
         0x00B4: "rewind", 0x00B3: "fast_forward", 0x008D: "tv",
+        // Amazon Remote Pro だけにあるボタン(互換品で確認)
+        0x0280: "headphones", 0x0033: "settings", 0x009C: "channel_up", 0x009D: "channel_down",
+        0x027E: "custom_1", 0x027F: "custom_2",
     ]
     static let apps: [UInt16: String] = [
         0xA1: "app_a1", 0xA2: "app_a2", 0xA3: "app_a3", 0xA4: "app_a4",
@@ -129,6 +145,13 @@ public struct ButtonTracker {
     private var pressed: [UInt8: Set<String>] = [:]
 
     public init(profile: any RemoteProfile) { self.profile = profile }
+
+    /// 押されたままのボタンをすべて解放したことにする(切断時に使う)
+    public mutating func releaseAll() -> [ButtonEvent] {
+        let names = pressed.values.reduce(into: Set<String>()) { $0.formUnion($1) }
+        pressed = [:]
+        return names.sorted().map { ButtonEvent(name: $0, isDown: false) }
+    }
 
     public mutating func process(reportID: UInt8, payload: [UInt8]) -> [ButtonEvent] {
         guard let now = profile.pressedButtons(reportID: reportID, payload: payload) else { return [] }

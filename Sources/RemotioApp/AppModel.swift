@@ -5,7 +5,9 @@ import RemoteCore
 import ServiceManagement
 
 final class AppModel: ObservableObject {
-    @Published private(set) var connected = false
+    /// つながっているリモコンの名前(接続順ではなく名前順)
+    @Published private(set) var connectedRemotes: [String] = []
+    var connected: Bool { !connectedRemotes.isEmpty }
     @Published private(set) var micOn = false
     @Published private(set) var outputDevices: [AudioDeviceInfo] = []
     /// ログ。ボタンを押すたびに増えるので、変更を設定画面全体へ伝えないよう別に持つ
@@ -19,11 +21,22 @@ final class AppModel: ObservableObject {
     @Published private(set) var driverDeviceAvailable = false
     @Published private(set) var driverBusy = false
     @Published private(set) var driverError: String?
-    /// 押されているボタン(画面のリモコン図とカードに反映する)
+    /// 編集中のリモコンで押されているボタン(画面のリモコン図とカードに反映する)
     @Published private(set) var pressedButtons: Set<String> = []
-    /// 既定の割り当て(アプリごとの割り当てがないときに使う)
+    /// これまでにつないだリモコンと、それぞれの割り当て(HIDRemote.Remote.key → 設定)
+    @Published private(set) var knownRemotes: [String: StoredRemote] = [:]
+    /// 設定画面で編集しているリモコン。まだ1台もつないでいなければ nil(新しいリモコンの初期設定を編集する)
+    @Published var editingRemote: String? {
+        didSet {
+            guard editingRemote != oldValue else { return }
+            loadEditingTarget()
+            if let app = editingApp, appBindings[app] == nil { editingApp = nil }
+            refreshPressed()
+        }
+    }
+    /// 編集中のリモコンの既定の割り当て(アプリごとの割り当てがないときに使う)
     @Published private(set) var bindings: [String: String] = KeyMap.defaultBindings
-    /// アプリごとの割り当て(バンドル ID → 既定の割り当てとの差分)
+    /// 編集中のリモコンのアプリごとの割り当て(バンドル ID → 既定の割り当てとの差分)
     @Published private(set) var appBindings: [String: [String: String]] = [:]
     /// 設定画面で編集している対象。nil なら既定
     @Published var editingApp: String?
@@ -57,8 +70,11 @@ final class AppModel: ObservableObject {
     private let profile = FireTVRemoteProfile()
     private var session: VoiceSession?
     private var output: PCMOutput?
-    private var router: ButtonKeyRouter?
-    private var suppressor: KeySuppressor?
+    /// つながっているリモコンごとの割り当ての処理
+    private var live: [UInt64: LiveRemote] = [:]
+    /// 新しいリモコンに最初に使う割り当て(リモコンごとに分ける前の設定ファイル)
+    private var templateBindings: [String: String] = KeyMap.defaultBindings
+    private var templateAppBindings: [String: [String: String]] = [:]
 
     private var supportDirectory: URL {
         let dir = FileManager.default.urls(for: .applicationSupportDirectory, in: .userDomainMask)[0]
@@ -68,8 +84,7 @@ final class AppModel: ObservableObject {
     }
     private var keymapURL: URL { supportDirectory.appendingPathComponent("keymap.json") }
     private var appKeymapsURL: URL { supportDirectory.appendingPathComponent("app-keymaps.json") }
-    /// 今かけている元のキー入力の無効化の対象。変わったときだけ掛け直す
-    private var suppressedButtons: Set<String> = []
+    private var remotesURL: URL { supportDirectory.appendingPathComponent("remotes.json") }
     private var activationObserver: NSObjectProtocol?
 
     init() {
@@ -78,12 +93,18 @@ final class AppModel: ObservableObject {
         selectedDeviceUID = UserDefaults.standard.string(forKey: "customOutputDeviceUID")
         if let data = try? Data(contentsOf: keymapURL),
            let saved = try? JSONDecoder().decode([String: String].self, from: data) {
-            bindings = saved
+            templateBindings = saved
         }
         if let data = try? Data(contentsOf: appKeymapsURL),
            let saved = try? JSONDecoder().decode([String: [String: String]].self, from: data) {
-            appBindings = saved
+            templateAppBindings = saved
         }
+        if let data = try? Data(contentsOf: remotesURL),
+           let saved = try? JSONDecoder().decode([String: StoredRemote].self, from: data) {
+            knownRemotes = saved
+        }
+        editingRemote = remoteKeys.first
+        loadEditingTarget()
         activeApp = Self.frontmostAppID()
         activationObserver = NSWorkspace.shared.notificationCenter.addObserver(
             forName: NSWorkspace.didActivateApplicationNotification, object: nil, queue: .main
@@ -93,7 +114,6 @@ final class AppModel: ObservableObject {
         }
         refreshDevices()
         refreshPermissions()
-        rebuildMapping()
     }
 
     private func log(_ message: String) {
@@ -117,15 +137,20 @@ final class AppModel: ObservableObject {
                 self?.micMeter.setActive(enabled)
                 if enabled { self?.output?.beginSession() } else { self?.output?.endSession() }
             }
-            session.onButton = { [weak self] event in self?.handle(event) }
-            session.onDisconnect = { [weak self] in
-                self?.connected = false
-                self?.pressedButtons = []
-                self?.releaseKeys()
+            session.onButton = { [weak self] event, remoteID in self?.handle(event, from: remoteID) }
+            // 切断したリモコンの押されたままのボタンは、VoiceSession が先に解放を送っている
+            session.onDisconnect = { [weak self, unowned session] remote in
+                guard let self else { return }
+                live[remote.id]?.router?.releaseAll()
+                live[remote.id] = nil
+                connectedRemotes = Self.names(session.remote.remotes)
+                connectedKeys = Set(live.values.map(\.key))
+                refreshPressed()
             }
-            session.remote.onConnectExtra = { [weak self] in
-                self?.connected = true
-                self?.applySuppression()
+            session.remote.onConnectExtra = { [weak self, unowned session] remote in
+                guard let self else { return }
+                remoteConnected(remote)
+                connectedRemotes = Self.names(session.remote.remotes)
             }
             self.session = session
             let result = session.start()
@@ -139,13 +164,46 @@ final class AppModel: ObservableObject {
         }
     }
 
-    private func handle(_ event: ButtonEvent) {
-        if event.isDown { pressedButtons.insert(event.name) } else { pressedButtons.remove(event.name) }
+    private static func names(_ remotes: [UInt64: HIDRemote.Remote]) -> [String] {
+        remotes.values.map(\.name).sorted()
+    }
+
+    /// 初めてのリモコンなら、新しいリモコンの初期設定で登録する
+    private func remoteConnected(_ remote: HIDRemote.Remote) {
+        if knownRemotes[remote.key] == nil {
+            var all = knownRemotes
+            all[remote.key] = StoredRemote(name: remote.name, productID: remote.productID,
+                                           bindings: templateBindings, appBindings: templateAppBindings)
+            saveRemotes(all)
+            log(String(localized: "新しいリモコンを登録しました: \(remote.name)"))
+        }
+        if editingRemote == nil { editingRemote = remote.key }
+        live[remote.id] = LiveRemote(remote: remote)
+        connectedKeys = Set(live.values.map(\.key))
+        rebuild(remote.id)
+        applySuppression(remote.id)
+    }
+
+    private func handle(_ event: ButtonEvent, from remoteID: UInt64) {
+        guard var entry = live[remoteID] else { return }
+        if event.isDown { entry.pressed.insert(event.name) } else { entry.pressed.remove(event.name) }
+        live[remoteID] = entry
         // 対応表にない入力は、新しいボタンや別機種への対応を調べられるようにログへ残す
-        if event.isDown && !RemoteButton.all.contains(where: { $0.id == event.name }) {
+        if event.isDown && !RemoteLayout.allButtonIDs.contains(event.name) {
             log(String(localized: "未対応のボタンの入力: \(event.name)"))
         }
-        router?.process(event)
+        // 設定画面を見ながら別のリモコンのボタンを押したら、そのリモコンの設定に切り替える
+        if event.isDown && isSettingsWindowActive && editingRemote != entry.key {
+            editingRemote = entry.key
+        }
+        refreshPressed()
+        entry.router?.process(event)
+    }
+
+    private func refreshPressed() {
+        let pressed = live.values.filter { $0.key == editingRemote }
+            .reduce(into: Set<String>()) { $0.formUnion($1.pressed) }
+        if pressed != pressedButtons { pressedButtons = pressed }
     }
 
     /// 設定画面かセットアップの案内を操作している間か
@@ -170,7 +228,7 @@ final class AppModel: ObservableObject {
     }
 
     private func releaseKeys() {
-        router?.releaseAll()
+        for entry in live.values { entry.router?.releaseAll() }
     }
 
     private static func frontmostAppID() -> String? {
@@ -181,53 +239,69 @@ final class AppModel: ObservableObject {
     /// 前面のアプリが変わったら、そのアプリの割り当てに切り替える
     private func frontmostAppChanged(_ bundleID: String?) {
         guard let bundleID, bundleID != Bundle.main.bundleIdentifier, bundleID != activeApp else { return }
-        let before = appBindings[activeApp ?? ""]
+        let hasOverrides = { (app: String?) in
+            app.map { app in self.knownRemotes.values.contains { $0.appBindings[app] != nil } } ?? false
+        }
+        let before = hasOverrides(activeApp)
         activeApp = bundleID
-        // どちらのアプリにも個別の割り当てがなければ、作り直す必要はない
-        guard before != nil || appBindings[bundleID] != nil else { return }
-        log(appBindings[bundleID] != nil ? String(localized: "割り当てを切り替えました: \(AppInfo.name(of: bundleID))")
-                                         : String(localized: "既定の割り当てに戻しました"))
+        // どのリモコンにもどちらのアプリの個別の割り当てがなければ、作り直す必要はない
+        guard before || hasOverrides(bundleID) else { return }
+        log(hasOverrides(bundleID) ? String(localized: "割り当てを切り替えました: \(AppInfo.name(of: bundleID))")
+                                   : String(localized: "既定の割り当てに戻しました"))
         rebuildMapping()
-        if connected { applySuppressionIfChanged() }
     }
 
-    /// 前面のアプリに使う割り当て
-    private var activeBindings: [String: String] {
-        AppKeymaps.merge(bindings, activeApp.flatMap { appBindings[$0] })
+    /// そのリモコンで、前面のアプリに使う割り当て
+    private func activeBindings(for key: String) -> [String: String] {
+        guard let stored = knownRemotes[key] else { return templateBindings }
+        return AppKeymaps.merge(stored.bindings, activeApp.flatMap { stored.appBindings[$0] })
     }
 
+    /// つながっているすべてのリモコンの割り当てを作り直し、止めるボタンが変わったものだけ掛け直す
     private func rebuildMapping() {
-        releaseKeys()
+        for id in live.keys {
+            rebuild(id)
+            applySuppressionIfChanged(id)
+        }
+    }
+
+    private func rebuild(_ id: UInt64) {
+        guard var entry = live[id] else { return }
+        entry.router?.releaseAll()
         do {
             // 押している間が分からないボタンは、保存済みの長押しと2回押しの設定を使わない
-            let bindings = activeBindings.filter { key, _ in
+            let bindings = activeBindings(for: entry.key).filter { key, _ in
                 guard let dot = key.firstIndex(of: ".") else { return true }
                 return profile.reportsHold(of: String(key[..<dot]))
             }
             let map = try KeyMap(bindings, standardKeys: standardKeys)
-            router = ButtonKeyRouter(map: map, voiceButton: profile.voiceButtonName) { [weak self] in self?.post($0) }
-            suppressor = KeySuppressor(profile: profile, buttons: map.suppressedButtons + [profile.voiceButtonName])
+            entry.router = ButtonKeyRouter(map: map, voiceButton: profile.voiceButtonName) { [weak self] in self?.post($0) }
+            entry.wantedSuppression = Set(map.suppressedButtons)
+            entry.suppressor = KeySuppressor(profile: profile, remote: entry.remote,
+                                             buttons: map.suppressedButtons + [profile.voiceButtonName])
+            live[id] = entry
         } catch {
             keymapError = "\(error)"
         }
     }
 
-    /// アプリを切り替えたとき、止めるボタンが変わる場合だけ元のキー入力の無効化を掛け直す
-    private func applySuppressionIfChanged() {
-        guard let buttons = try? KeyMap(activeBindings).suppressedButtons else { return }
-        if Set(buttons) != suppressedButtons { applySuppression() }
+    /// 止めるボタンが変わる場合だけ元のキー入力の無効化を掛け直す
+    private func applySuppressionIfChanged(_ id: UInt64) {
+        guard let entry = live[id], entry.wantedSuppression != entry.appliedSuppression else { return }
+        applySuppression(id)
     }
 
     /// 押し方を判定するボタンで、タップが「標準」のときに送る操作
     private var standardKeys: [String: String] {
-        Dictionary(uniqueKeysWithValues: RemoteButton.all.map(\.id).compactMap { id in
+        Dictionary(uniqueKeysWithValues: RemoteLayout.allButtonIDs.compactMap { id in
             profile.standardKey(of: id).map { (id, $0) }
         })
     }
 
-    private func applySuppression() {
-        guard let suppressor else { return }
-        suppressedButtons = Set((try? KeyMap(activeBindings).suppressedButtons) ?? [])
+    private func applySuppression(_ id: UInt64) {
+        guard var entry = live[id], let suppressor = entry.suppressor else { return }
+        entry.appliedSuppression = entry.wantedSuppression
+        live[id] = entry
         log(suppressor.apply() ? String(localized: "元のキー入力の無効化: 成功") : String(localized: "元のキー入力の無効化: 失敗"))
     }
 
@@ -430,16 +504,7 @@ final class AppModel: ObservableObject {
     }
 
     private func saveAppBindings(_ all: [String: [String: String]]) {
-        do {
-            try JSONEncoder().encode(all).write(to: appKeymapsURL)
-            appBindings = all
-            keymapError = nil
-            rebuildMapping()
-            if connected { applySuppressionIfChanged() }
-            log(String(localized: "キー割り当てを保存しました"))
-        } catch {
-            keymapError = "\(error)"
-        }
+        persist(bindings: bindings, appBindings: all)
     }
 
     /// メニューとボタンに出す、何も割り当てていないときの名前
@@ -465,24 +530,129 @@ final class AppModel: ObservableObject {
     private func save(_ edited: [String: String]) {
         do {
             _ = try KeyMap(edited)
-            try JSONEncoder().encode(edited).write(to: keymapURL)
+        } catch {
+            keymapError = "\(error)"
+            return
+        }
+        persist(bindings: edited, appBindings: appBindings)
+    }
+
+    /// 編集中のリモコンの割り当てを保存する。リモコンが1台もなければ、新しいリモコンの初期設定として保存する
+    private func persist(bindings edited: [String: String], appBindings editedApps: [String: [String: String]]) {
+        do {
+            if let key = editingRemote, var stored = knownRemotes[key] {
+                stored.bindings = edited
+                stored.appBindings = editedApps
+                var all = knownRemotes
+                all[key] = stored
+                try writeRemotes(all)
+            } else {
+                try JSONEncoder().encode(edited).write(to: keymapURL)
+                try JSONEncoder().encode(editedApps).write(to: appKeymapsURL)
+                templateBindings = edited
+                templateAppBindings = editedApps
+            }
             bindings = edited
+            appBindings = editedApps
             keymapError = nil
             rebuildMapping()
-            if connected { applySuppression() }
             log(String(localized: "キー割り当てを保存しました"))
         } catch {
             keymapError = "\(error)"
         }
     }
 
+    private func writeRemotes(_ all: [String: StoredRemote]) throws {
+        let encoder = JSONEncoder()
+        encoder.outputFormatting = [.prettyPrinted, .sortedKeys]
+        try encoder.encode(all).write(to: remotesURL)
+        knownRemotes = all
+    }
+
+    private func saveRemotes(_ all: [String: StoredRemote]) {
+        do { try writeRemotes(all) } catch { keymapError = "\(error)" }
+    }
+
+    /// 編集の対象を切り替えたとき、その割り当てを画面用に読み込む
+    private func loadEditingTarget() {
+        if let key = editingRemote, let stored = knownRemotes[key] {
+            bindings = stored.bindings
+            appBindings = stored.appBindings
+        } else {
+            bindings = templateBindings
+            appBindings = templateAppBindings
+        }
+    }
+
+    // MARK: リモコンの一覧
+
+    /// つながっているリモコン(HIDRemote.Remote.key)
+    @Published private(set) var connectedKeys: Set<String> = []
+
+    /// 登録済みのリモコン。つながっているものを先に、名前順に並べる
+    var remoteKeys: [String] {
+        knownRemotes.keys.sorted {
+            let a = connectedKeys.contains($0), b = connectedKeys.contains($1)
+            if a != b { return a }
+            return (remoteTitle($0), $0) < (remoteTitle($1), $1)
+        }
+    }
+
+    /// 一覧に出す名前。同じ機種が2台以上あれば、シリアル番号の末尾を付けて見分ける
+    func remoteTitle(_ key: String) -> String {
+        guard let stored = knownRemotes[key] else { return "Amazon Remote" }
+        let sameName = knownRemotes.values.filter { $0.name == stored.name }.count > 1
+        guard sameName, key.hasPrefix("serial:") else { return stored.name }
+        return "\(stored.name)(…\(key.suffix(4)))"
+    }
+
+    /// 編集中のリモコンの図
+    var editingLayout: RemoteLayout {
+        RemoteLayout.of(productID: editingRemote.flatMap { knownRemotes[$0]?.productID })
+    }
+
+    /// つながっていないリモコンの設定を消す
+    func removeRemote(_ key: String) {
+        guard !connectedKeys.contains(key) else { return }
+        var all = knownRemotes
+        all[key] = nil
+        saveRemotes(all)
+        if editingRemote == key { editingRemote = remoteKeys.first }
+    }
+
     func shutdown() {
         releaseKeys()
         KeyInjector.flush()
         session?.shutdown()
-        if connected, let suppressor, !suppressor.clear() { log(String(localized: "元のキー入力の設定を戻せませんでした")) }
+        for entry in live.values {
+            if let suppressor = entry.suppressor, !suppressor.clear() {
+                log(String(localized: "元のキー入力の設定を戻せませんでした"))
+            }
+        }
         output?.stop()
     }
+}
+
+/// 1台のリモコンの保存した設定
+struct StoredRemote: Codable, Equatable {
+    var name: String
+    var productID: Int
+    var bindings: [String: String]
+    var appBindings: [String: [String: String]]
+}
+
+/// つながっているリモコン1台の割り当ての処理
+private struct LiveRemote {
+    let remote: HIDRemote.Remote
+    var key: String { remote.key }
+    var router: ButtonKeyRouter?
+    var suppressor: KeySuppressor?
+    /// 今の割り当てで止めたいボタンと、実際に止めているボタン
+    var wantedSuppression: Set<String> = []
+    var appliedSuppression: Set<String>?
+    var pressed: Set<String> = []
+
+    init(remote: HIDRemote.Remote) { self.remote = remote }
 }
 
 /// remotio://settings/<ページ> と remotio://setup の求め

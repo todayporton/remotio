@@ -46,6 +46,29 @@ final class RemoteCoreTests: XCTestCase {
         XCTAssertEqual(tracker.process(reportID: 0xF0, payload: [0xB8]), [])
     }
 
+    func testRemoteProButtons() {
+        let profile = FireTVRemoteProfile()
+        XCTAssertEqual(profile.productIDs, [0x042F, 0x0425])
+        var tracker = ButtonTracker(profile: profile)
+        let codes: [(UInt8, UInt8, String)] = [
+            (0x80, 0x02, "headphones"), (0x33, 0x00, "settings"), (0x9C, 0x00, "channel_up"),
+            (0x9D, 0x00, "channel_down"), (0x7E, 0x02, "custom_1"), (0x7F, 0x02, "custom_2"),
+        ]
+        for (low, high, name) in codes {
+            XCTAssertEqual(tracker.process(reportID: 0x02, payload: [low, high, 0, 0]), [ButtonEvent(name: name, isDown: true)])
+            XCTAssertEqual(tracker.process(reportID: 0x02, payload: [0, 0, 0, 0]), [ButtonEvent(name: name, isDown: false)])
+        }
+    }
+
+    func testReleaseAllOnDisconnect() {
+        var tracker = ButtonTracker(profile: FireTVRemoteProfile())
+        _ = tracker.process(reportID: 0x01, payload: [0x52, 0, 0])
+        _ = tracker.process(reportID: 0x02, payload: [0xE9, 0x00, 0, 0])
+        XCTAssertEqual(tracker.releaseAll(), [ButtonEvent(name: "dpad_up", isDown: false),
+                                              ButtonEvent(name: "volume_up", isDown: false)])
+        XCTAssertEqual(tracker.releaseAll(), [])
+    }
+
     func testPowerButtonIsKeyboardPower() {
         let profile = FireTVRemoteProfile()
         var tracker = ButtonTracker(profile: profile)

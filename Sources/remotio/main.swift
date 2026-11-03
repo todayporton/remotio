@@ -102,11 +102,14 @@ func probe() {
 
 func listen(_ args: [String]) {
     let remote = HIDRemote(profile: FireTVRemoteProfile(), seize: args.contains("--seize"))
-    var tracker = ButtonTracker(profile: remote.profile)
-    remote.onConnect = { _ in print("[接続]") }
-    remote.onDisconnect = { print("[切断]") }
+    var trackers: [UInt64: ButtonTracker] = [:]
+    remote.onConnect = { print("[接続] \($0.name) id=\($0.id)") }
+    remote.onDisconnect = { print("[切断] \($0.name)") }
     remote.onReport = { report in
-        print(String(format: "report 0x%02X (%dB) %@", report.reportID, report.payload.count, hex(report.payload)))
+        print(String(format: "remote %llu report 0x%02X (%dB) %@", report.remoteID, report.reportID,
+                     report.payload.count, hex(report.payload)))
+        var tracker = trackers[report.remoteID] ?? ButtonTracker(profile: remote.profile)
+        defer { trackers[report.remoteID] = tracker }
         for e in tracker.process(reportID: report.reportID, payload: report.payload) {
             print("  \(e.isDown ? "押下" : "解放"): \(e.name)")
         }
@@ -214,7 +217,7 @@ func stream(_ args: [String]) throws {
     let suppressor = args.contains("--no-suppress") ? nil : KeySuppressor(profile: profile, buttons: [profile.voiceButtonName])
     let checkDefaults = defaultsSnapshot()
     try output.start()
-    session.remote.onConnectExtra = {
+    session.remote.onConnectExtra = { _ in
         if let suppressor {
             print("\(timestamp()) 音声ボタンのキー入力の無効化: \(suppressor.apply() ? "成功" : "失敗")")
         }
@@ -290,9 +293,9 @@ func run(_ args: [String]) throws {
     session.onMicChange = { enabled in
         if enabled { output?.beginSession() } else { output?.endSession() }
     }
-    session.onButton = { router.process($0) }
-    session.onDisconnect = { router.releaseAll() }
-    session.remote.onConnectExtra = {
+    session.onButton = { event, _ in router.process(event) }
+    session.onDisconnect = { _ in if session.remote.remotes.isEmpty { router.releaseAll() } }
+    session.remote.onConnectExtra = { _ in
         if let suppressor {
             print("\(timestamp()) 元のキー入力の無効化: \(suppressor.apply() ? "成功" : "失敗")")
         }
