@@ -4,8 +4,8 @@ public enum OpusError: Error, CustomStringConvertible {
     case create(Int32), decode(Int32)
     public var description: String {
         switch self {
-        case .create(let c): return "opus_decoder_create 失敗: \(String(cString: opus_strerror(c)))"
-        case .decode(let c): return "opus_decode 失敗: \(String(cString: opus_strerror(c)))"
+        case .create(let c): return String(localized: "opus_decoder_create 失敗: \(String(cString: opus_strerror(c)))")
+        case .decode(let c): return String(localized: "opus_decode 失敗: \(String(cString: opus_strerror(c)))")
         }
     }
 }

@@ -13,28 +13,28 @@ struct RemoteButton: Identifiable {
     let size: CGFloat
 
     static let left: [RemoteButton] = [
-        .init(id: "voice", title: "音声(Push-to-Talk)", symbol: "mic.fill", position: .init(x: 0.5, y: 0.075), size: 26),
-        .init(id: "dpad_up", title: "上", symbol: "chevron.up", position: .init(x: 0.5, y: 0.165), size: 20),
-        .init(id: "dpad_left", title: "左", symbol: "chevron.left", position: .init(x: 0.25, y: 0.235), size: 20),
-        .init(id: "back", title: "戻る", symbol: "arrow.uturn.backward", position: .init(x: 0.22, y: 0.365), size: 26),
-        .init(id: "rewind", title: "巻き戻し", symbol: "backward.fill", position: .init(x: 0.22, y: 0.445), size: 26),
-        .init(id: "volume_up", title: "音量 +", symbol: "speaker.plus", position: .init(x: 0.5, y: 0.53), size: 26),
-        .init(id: "mute", title: "ミュート", symbol: "speaker.slash", position: .init(x: 0.22, y: 0.61), size: 26),
-        .init(id: "app_a1", title: "アプリ 1", symbol: "1.circle", position: .init(x: 0.3, y: 0.73), size: 26),
-        .init(id: "app_a3", title: "アプリ 3", symbol: "3.circle", position: .init(x: 0.3, y: 0.83), size: 26),
+        .init(id: "voice", title: String(localized: "音声(Push-to-Talk)"), symbol: "mic.fill", position: .init(x: 0.5, y: 0.075), size: 26),
+        .init(id: "dpad_up", title: String(localized: "上"), symbol: "chevron.up", position: .init(x: 0.5, y: 0.165), size: 20),
+        .init(id: "dpad_left", title: String(localized: "左"), symbol: "chevron.left", position: .init(x: 0.25, y: 0.235), size: 20),
+        .init(id: "back", title: String(localized: "戻る"), symbol: "arrow.uturn.backward", position: .init(x: 0.22, y: 0.365), size: 26),
+        .init(id: "rewind", title: String(localized: "巻き戻し"), symbol: "backward.fill", position: .init(x: 0.22, y: 0.445), size: 26),
+        .init(id: "volume_up", title: String(localized: "音量 +"), symbol: "speaker.plus", position: .init(x: 0.5, y: 0.53), size: 26),
+        .init(id: "mute", title: String(localized: "ミュート"), symbol: "speaker.slash", position: .init(x: 0.22, y: 0.61), size: 26),
+        .init(id: "app_a1", title: String(localized: "アプリ 1"), symbol: "1.circle", position: .init(x: 0.3, y: 0.73), size: 26),
+        .init(id: "app_a3", title: String(localized: "アプリ 3"), symbol: "3.circle", position: .init(x: 0.3, y: 0.83), size: 26),
     ]
     static let right: [RemoteButton] = [
-        .init(id: "select", title: "決定", symbol: "circle.circle", position: .init(x: 0.5, y: 0.235), size: 30),
-        .init(id: "dpad_right", title: "右", symbol: "chevron.right", position: .init(x: 0.75, y: 0.235), size: 20),
-        .init(id: "dpad_down", title: "下", symbol: "chevron.down", position: .init(x: 0.5, y: 0.305), size: 20),
-        .init(id: "home", title: "ホーム", symbol: "house", position: .init(x: 0.5, y: 0.365), size: 26),
-        .init(id: "menu", title: "メニュー", symbol: "line.3.horizontal", position: .init(x: 0.78, y: 0.365), size: 26),
-        .init(id: "play_pause", title: "再生・停止", symbol: "playpause.fill", position: .init(x: 0.5, y: 0.445), size: 26),
-        .init(id: "fast_forward", title: "早送り", symbol: "forward.fill", position: .init(x: 0.78, y: 0.445), size: 26),
-        .init(id: "volume_down", title: "音量 −", symbol: "speaker.minus", position: .init(x: 0.5, y: 0.61), size: 26),
+        .init(id: "select", title: String(localized: "決定"), symbol: "circle.circle", position: .init(x: 0.5, y: 0.235), size: 30),
+        .init(id: "dpad_right", title: String(localized: "右"), symbol: "chevron.right", position: .init(x: 0.75, y: 0.235), size: 20),
+        .init(id: "dpad_down", title: String(localized: "下"), symbol: "chevron.down", position: .init(x: 0.5, y: 0.305), size: 20),
+        .init(id: "home", title: String(localized: "ホーム"), symbol: "house", position: .init(x: 0.5, y: 0.365), size: 26),
+        .init(id: "menu", title: String(localized: "メニュー"), symbol: "line.3.horizontal", position: .init(x: 0.78, y: 0.365), size: 26),
+        .init(id: "play_pause", title: String(localized: "再生・停止"), symbol: "playpause.fill", position: .init(x: 0.5, y: 0.445), size: 26),
+        .init(id: "fast_forward", title: String(localized: "早送り"), symbol: "forward.fill", position: .init(x: 0.78, y: 0.445), size: 26),
+        .init(id: "volume_down", title: String(localized: "音量 −"), symbol: "speaker.minus", position: .init(x: 0.5, y: 0.61), size: 26),
         .init(id: "tv", title: "TV", symbol: "tv", position: .init(x: 0.78, y: 0.61), size: 26),
-        .init(id: "app_a2", title: "アプリ 2", symbol: "2.circle", position: .init(x: 0.7, y: 0.73), size: 26),
-        .init(id: "app_a4", title: "アプリ 4", symbol: "4.circle", position: .init(x: 0.7, y: 0.83), size: 26),
+        .init(id: "app_a2", title: String(localized: "アプリ 2"), symbol: "2.circle", position: .init(x: 0.7, y: 0.73), size: 26),
+        .init(id: "app_a4", title: String(localized: "アプリ 4"), symbol: "4.circle", position: .init(x: 0.7, y: 0.83), size: 26),
     ]
     static let all = left + right
 }
@@ -42,8 +42,16 @@ struct RemoteButton: Identifiable {
 // MARK: - 全体
 
 enum SettingsPage: String, CaseIterable, Identifiable {
-    case connection = "接続と音声", buttons = "ボタン", permissions = "権限", logs = "ログ"
+    case connection, buttons, permissions, logs
     var id: String { rawValue }
+    var title: String {
+        switch self {
+        case .connection: return String(localized: "接続と音声")
+        case .buttons: return String(localized: "ボタン")
+        case .permissions: return String(localized: "権限")
+        case .logs: return String(localized: "ログ")
+        }
+    }
     var symbol: String {
         switch self {
         case .connection: return "link"
@@ -71,7 +79,7 @@ struct SettingsView: View {
                     Button { page = item } label: {
                         VStack(spacing: 6) {
                             Image(systemName: item.symbol).font(.title2)
-                            Text(item.rawValue).font(.caption)
+                            Text(item.title).font(.caption)
                         }
                         .frame(maxWidth: .infinity, minHeight: 62)
                         .contentShape(Rectangle())
@@ -81,7 +89,7 @@ struct SettingsView: View {
                     }
                     .buttonStyle(.plain)
                     .focusable(false)
-                    .accessibilityLabel(item.rawValue)
+                    .accessibilityLabel(item.title)
                 }
                 Spacer()
             }
@@ -251,7 +259,7 @@ struct ButtonsPage: View {
 
     var body: some View {
         VStack(alignment: .leading, spacing: 14) {
-            PageHeader(title: "ボタン") { StatusPill(connected: model.connected) }
+            PageHeader(title: SettingsPage.buttons.title) { StatusPill(connected: model.connected) }
             ScrollView {
                 map
                     .coordinateSpace(name: mapSpace)
@@ -451,7 +459,7 @@ struct ButtonsPage: View {
             model.setBinding(id, to: text)
             clearSelection()
         } else {
-            model.keymapError = "F キーとして割り当てるには、Fn も一緒に押してください"
+            model.keymapError = String(localized: "F キーとして割り当てるには、Fn も一緒に押してください")
         }
     }
 
@@ -459,7 +467,7 @@ struct ButtonsPage: View {
         guard let id = recording else { return }
         if type == .keyDown {
             guard let text = KeyCombo.recordedText(keyCode: keyCode, flags: flags) else {
-                model.keymapError = "このキーは割り当てできません"
+                model.keymapError = String(localized: "このキーは割り当てできません")
                 return
             }
             model.setBinding(id, to: text)
@@ -549,7 +557,7 @@ struct ConnectionPage: View {
 
     var body: some View {
         VStack(alignment: .leading, spacing: 18) {
-            PageHeader(title: "接続と音声") { EmptyView() }
+            PageHeader(title: SettingsPage.connection.title) { EmptyView() }
             HStack(alignment: .top, spacing: 18) {
                 Card {
                     VStack(spacing: 14) {
@@ -628,12 +636,12 @@ struct ConnectionPage: View {
 
     private var driverStatus: String {
         if model.driverInstalled && model.driverDeviceAvailable {
-            return "使用できます。音声入力を使うアプリの入力に「Remotio Microphone」を選んでください。"
+            return String(localized: "使用できます。音声入力を使うアプリの入力に「Remotio Microphone」を選んでください。")
         }
         if model.driverInstalled {
-            return "新しいバージョンへの更新が必要です。再インストールしてください。解決しない場合は Mac を再起動してください。"
+            return String(localized: "新しいバージョンへの更新が必要です。再インストールしてください。解決しない場合は Mac を再起動してください。")
         }
-        return "他のアプリのマイクとして使うために必要です。管理者パスワードの入力が必要で、処理の間は Mac の音声が一瞬止まります。"
+        return String(localized: "他のアプリのマイクとして使うために必要です。管理者パスワードの入力が必要で、処理の間は Mac の音声が一瞬止まります。")
     }
 }
 
@@ -644,10 +652,10 @@ struct PermissionsPage: View {
 
     var body: some View {
         VStack(alignment: .leading, spacing: 18) {
-            PageHeader(title: "権限") { EmptyView() }
-            row("入力監視", "リモコンのボタンと音声を受け取るために必要です。変更後はアプリを開き直してください。",
+            PageHeader(title: SettingsPage.permissions.title) { EmptyView() }
+            row(String(localized: "入力監視"), String(localized: "リモコンのボタンと音声を受け取るために必要です。変更後はアプリを開き直してください。"),
                 granted: model.inputMonitoringGranted, action: model.requestInputMonitoring)
-            row("アクセシビリティ", "割り当てたキーを送信するために必要です。",
+            row(String(localized: "アクセシビリティ"), String(localized: "割り当てたキーを送信するために必要です。"),
                 granted: model.accessibilityGranted, action: model.requestAccessibility)
             Spacer()
         }
@@ -680,10 +688,10 @@ struct LogsPage: View {
 
     var body: some View {
         VStack(alignment: .leading, spacing: 18) {
-            PageHeader(title: "ログ") { EmptyView() }
+            PageHeader(title: SettingsPage.logs.title) { EmptyView() }
             Card {
                 ScrollView {
-                    Text(model.logs.isEmpty ? "まだログはありません。" : model.logs.joined(separator: "\n"))
+                    Text(model.logs.isEmpty ? String(localized: "まだログはありません。") : model.logs.joined(separator: "\n"))
                         .font(.system(.caption, design: .monospaced))
                         .textSelection(.enabled)
                         .frame(maxWidth: .infinity, alignment: .leading)

@@ -56,8 +56,8 @@ struct SetupView: View {
     }
 
     private var inputMonitoringStep: some View {
-        SetupStepCard(number: 1, title: "入力監視を許可する",
-                      detail: "リモコンのボタンと音声を受け取るために必要です。システム設定の一覧に Remotio がなければ、「+」から追加してオンにします。",
+        SetupStepCard(number: 1, title: String(localized: "入力監視を許可する"),
+                      detail: String(localized: "リモコンのボタンと音声を受け取るために必要です。システム設定の一覧に Remotio がなければ、「+」から追加してオンにします。"),
                       step: .inputMonitoring, progress: progress) {
             Button("許可する", action: model.requestInputMonitoring)
         } extra: {
@@ -73,8 +73,8 @@ struct SetupView: View {
     }
 
     private var accessibilityStep: some View {
-        SetupStepCard(number: 2, title: "アクセシビリティを許可する",
-                      detail: "割り当てたキーを送信するために必要です。システム設定の一覧で Remotio をオンにします。",
+        SetupStepCard(number: 2, title: String(localized: "アクセシビリティを許可する"),
+                      detail: String(localized: "割り当てたキーを送信するために必要です。システム設定の一覧で Remotio をオンにします。"),
                       step: .accessibility, progress: progress) {
             Button("許可する", action: model.requestAccessibility)
         } extra: {
@@ -83,8 +83,8 @@ struct SetupView: View {
     }
 
     private var pairingStep: some View {
-        SetupStepCard(number: 3, title: "リモコンをペアリングする",
-                      detail: "ホームボタンを約10秒押し続けてペアリング待ちにし、Bluetooth の設定で「Amazon Remote」を接続します。Fire TV とのペアリングは解除される場合があります。接続できない場合は、Fire TV の電源を切ってから試してください。",
+        SetupStepCard(number: 3, title: String(localized: "リモコンをペアリングする"),
+                      detail: String(localized: "ホームボタンを約10秒押し続けてペアリング待ちにし、Bluetooth の設定で「Amazon Remote」を接続します。Fire TV とのペアリングは解除される場合があります。接続できない場合は、Fire TV の電源を切ってから試してください。"),
                       step: .pairing, progress: progress) {
             Button("Bluetooth 設定を開く", action: model.openBluetoothSettings)
         } extra: {
@@ -93,8 +93,8 @@ struct SetupView: View {
     }
 
     private var microphoneStep: some View {
-        SetupStepCard(number: 4, title: "仮想マイクをインストールする",
-                      detail: "他のアプリのマイクとして使うために必要です。管理者パスワードの入力が必要で、処理の間は Mac の音声が一瞬止まります。",
+        SetupStepCard(number: 4, title: String(localized: "仮想マイクをインストールする"),
+                      detail: String(localized: "他のアプリのマイクとして使うために必要です。管理者パスワードの入力が必要で、処理の間は Mac の音声が一瞬止まります。"),
                       step: .microphone, progress: progress) {
             if model.driverBusy {
                 ProgressView().controlSize(.small)

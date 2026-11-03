@@ -81,8 +81,8 @@ public struct FireTVRemoteProfile: RemoteProfile {
     public func standardActionName(of button: String) -> String? {
         [
             "dpad_up": "↑", "dpad_down": "↓", "dpad_left": "←", "dpad_right": "→",
-            "select": "Enter", "play_pause": "再生・停止", "rewind": "巻き戻し", "fast_forward": "早送り",
-            "volume_up": "音量を上げる", "volume_down": "音量を下げる", "mute": "ミュート",
+            "select": "Enter", "play_pause": String(localized: "再生・停止"), "rewind": String(localized: "巻き戻し"), "fast_forward": String(localized: "早送り"),
+            "volume_up": String(localized: "音量を上げる"), "volume_down": String(localized: "音量を下げる"), "mute": String(localized: "ミュート"),
         ][button]
     }
 

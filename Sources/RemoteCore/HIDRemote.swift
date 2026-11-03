@@ -11,9 +11,9 @@ public struct InputReport {
 public func ioReturnDescription(_ r: IOReturn) -> String {
     switch r {
     case kIOReturnSuccess: return "success"
-    case kIOReturnNotPermitted: return "kIOReturnNotPermitted(入力監視の権限がない可能性)"
+    case kIOReturnNotPermitted: return String(localized: "kIOReturnNotPermitted(入力監視の権限がない可能性)")
     case kIOReturnNotPrivileged: return "kIOReturnNotPrivileged"
-    case kIOReturnExclusiveAccess: return "kIOReturnExclusiveAccess(他が占有中)"
+    case kIOReturnExclusiveAccess: return String(localized: "kIOReturnExclusiveAccess(他が占有中)")
     case kIOReturnNotOpen: return "kIOReturnNotOpen"
     case kIOReturnTimeout: return "kIOReturnTimeout"
     case kIOReturnUnsupported: return "kIOReturnUnsupported"

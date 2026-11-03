@@ -26,9 +26,9 @@ public final class VoiceSession {
 
         remote.onConnect = { [unowned self] _ in
             if let v = remote.voiceReports {
-                onLog?(String(format: "[接続] audio=0x%02X micEnable=0x%02X", v.audioReportID, v.micEnableReportID))
+                onLog?(String(localized: "[接続] audio=\(String(format: "0x%02X", v.audioReportID)) micEnable=\(String(format: "0x%02X", v.micEnableReportID))"))
             } else {
-                onLog?("[接続] Descriptor から音声 Report を特定できません")
+                onLog?(String(localized: "[接続] Descriptor から音声 Report を特定できません"))
             }
         }
         remote.onDisconnect = { [unowned self] in
@@ -38,7 +38,7 @@ public final class VoiceSession {
                 voice = VoiceController(voiceButton: remote.profile.voiceButtonName)
                 onMicChange?(false)
             }
-            onLog?("[切断]")
+            onLog?(String(localized: "[切断]"))
             onDisconnect?()
         }
         remote.onReport = { [unowned self] in handle($0) }
@@ -61,13 +61,13 @@ public final class VoiceSession {
             var failed = false
             do { onPCM?(try decoder.decode(report.payload)) } catch {
                 failed = true
-                onLog?("デコード失敗: \(error)")
+                onLog?(String(localized: "デコード失敗: \(String(describing: error))"))
             }
             stats.record(timestampNs: report.timestampNs, payload: report.payload, decodeFailed: failed)
             return
         }
         for event in tracker.process(reportID: report.reportID, payload: report.payload) {
-            onLog?("\(event.isDown ? "押下" : "解放"): \(event.name)")
+            onLog?(event.isDown ? String(localized: "押下: \(event.name)") : String(localized: "解放: \(event.name)"))
             onButton?(event)
             guard let enable = voice.process(event) else { continue }
             if enable {
@@ -75,14 +75,14 @@ public final class VoiceSession {
                 stats.beginSession()
             }
             remote.setMic(enabled: enable) { [unowned self] r in
-                onLog?("マイク\(enable ? "有効化" : "停止"): \(ioReturnDescription(r))")
+                onLog?(enable ? String(localized: "マイク有効化: \(ioReturnDescription(r))") : String(localized: "マイク停止: \(ioReturnDescription(r))"))
             }
             onMicChange?(enable)
             if enable {
                 let before = stats.packets
                 DispatchQueue.main.asyncAfter(deadline: .now() + 1.5) { [weak self] in
                     guard let self, voice.micEnabled, stats.packets == before else { return }
-                    onLog?("警告: マイク有効化から1.5秒経っても音声 Report が届きません")
+                    onLog?(String(localized: "警告: マイク有効化から1.5秒経っても音声 Report が届きません"))
                 }
             }
         }

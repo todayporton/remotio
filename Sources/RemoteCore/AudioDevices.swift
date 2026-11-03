@@ -13,10 +13,10 @@ public enum AudioDeviceError: Error, CustomStringConvertible {
     case notFound(String), ambiguous(String, [String]), noOutput(String), noInput(String)
     public var description: String {
         switch self {
-        case .notFound(let q): return "オーディオデバイスが見つかりません: \(q)"
-        case .ambiguous(let q, let c): return "\(q) に複数一致します: \(c.joined(separator: ", "))"
-        case .noOutput(let n): return "\(n) には出力チャンネルがありません"
-        case .noInput(let n): return "\(n) には入力チャンネルがありません"
+        case .notFound(let q): return String(localized: "オーディオデバイスが見つかりません: \(q)")
+        case .ambiguous(let q, let c): return String(localized: "\(q) に複数一致します: \(c.joined(separator: ", "))")
+        case .noOutput(let n): return String(localized: "\(n) には出力チャンネルがありません")
+        case .noInput(let n): return String(localized: "\(n) には入力チャンネルがありません")
         }
     }
 }

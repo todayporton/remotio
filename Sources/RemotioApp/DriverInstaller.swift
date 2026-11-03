@@ -15,7 +15,7 @@ enum DriverInstaller {
     /// 成功なら nil、失敗ならエラーの内容を返す。キャンセルも失敗として扱う。
     static func install() -> String? {
         guard let source = bundledDriver, FileManager.default.fileExists(atPath: source.path) else {
-            return "アプリにドライバが同梱されていません"
+            return String(localized: "アプリにドライバが同梱されていません")
         }
         let command = """
         /bin/rm -rf \(quoted(installedPath)) && \

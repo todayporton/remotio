@@ -39,6 +39,19 @@ macOS の音声入力を使う場合は、システム設定 > キーボード >
 
 root 権限、SIP の無効化、非公開 API は使いません。
 
+### 翻訳
+
+アプリの表示は日本語と英語に対応しています。Mac の言語設定に合わせて切り替わり、どちらでもない場合は英語になります。
+
+翻訳ファイルは `Resources/Localization` にあり、ソースから自動で作ります。表示する文言は SwiftUI の文字列か `String(localized:)` で書きます。
+
+```bash
+scripts/update-strings.py            # 文言を抜き出し、翻訳ファイルを更新する(英語の未訳には TODO が付く)
+# Resources/Localization/en-translations.py に英語の訳を追加してから
+scripts/fill-english.py              # 英語の訳を反映する
+scripts/update-strings.py --check    # 英語の訳の不足と、使われていない訳を確認する
+```
+
 ## 使い方
 
 ```sh

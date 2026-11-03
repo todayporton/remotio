@@ -12,30 +12,30 @@ public enum ActionCatalog {
 
     /// メディアキー(NX_KEYTYPE の値)
     static let mediaKeys: [String: (title: String, key: Int32)] = [
-        "play_pause": ("再生・停止", 16), "next": ("次へ", 17), "previous": ("前へ", 18),
-        "fast_forward": ("早送り", 19), "rewind": ("巻き戻し", 20),
-        "volume_up": ("音量を上げる", 0), "volume_down": ("音量を下げる", 1), "mute": ("ミュート", 7),
-        "brightness_up": ("画面を明るく", 2), "brightness_down": ("画面を暗く", 3),
+        "play_pause": (String(localized: "再生・停止"), 16), "next": (String(localized: "次へ"), 17), "previous": (String(localized: "前へ"), 18),
+        "fast_forward": (String(localized: "早送り"), 19), "rewind": (String(localized: "巻き戻し"), 20),
+        "volume_up": (String(localized: "音量を上げる"), 0), "volume_down": (String(localized: "音量を下げる"), 1), "mute": (String(localized: "ミュート"), 7),
+        "brightness_up": (String(localized: "画面を明るく"), 2), "brightness_down": (String(localized: "画面を暗く"), 3),
     ]
 
     /// macOS の既定のショートカットで実行する操作
     static let systemActions: [String: (title: String, combo: String)] = [
         "mission_control": ("Mission Control", "ctrl+up"),
-        "app_windows": ("アプリケーションウインドウ", "ctrl+down"),
-        "space_left": ("左の操作スペース", "ctrl+left"),
-        "space_right": ("右の操作スペース", "ctrl+right"),
-        "show_desktop": ("デスクトップを表示", "f11"),
+        "app_windows": (String(localized: "アプリケーションウインドウ"), "ctrl+down"),
+        "space_left": (String(localized: "左の操作スペース"), "ctrl+left"),
+        "space_right": (String(localized: "右の操作スペース"), "ctrl+right"),
+        "show_desktop": (String(localized: "デスクトップを表示"), "f11"),
         "spotlight": ("Spotlight", "cmd+space"),
-        "screenshot": ("スクリーンショット", "shift+cmd+5"),
-        "lock_screen": ("画面をロック", "ctrl+cmd+q"),
+        "screenshot": (String(localized: "スクリーンショット"), "shift+cmd+5"),
+        "lock_screen": (String(localized: "画面をロック"), "ctrl+cmd+q"),
     ]
 
     /// macOS の音声入力のショートカット(システム設定 > キーボード > 音声入力)。修飾キーを素早く2回押す
     static let dictationTriggers: [String: (title: String, key: String)] = [
-        "ctrl": ("Control キーを2回押す", "ctrl"),
-        "fn": ("Fn(地球儀)キーを2回押す", "fn"),
-        "rcmd": ("右 Command キーを2回押す", "rcmd"),
-        "lcmd": ("左 Command キーを2回押す", "cmd"),
+        "ctrl": (String(localized: "Control キーを2回押す"), "ctrl"),
+        "fn": (String(localized: "Fn(地球儀)キーを2回押す"), "fn"),
+        "rcmd": (String(localized: "右 Command キーを2回押す"), "rcmd"),
+        "lcmd": (String(localized: "左 Command キーを2回押す"), "cmd"),
     ]
 
     public static let dictationItems: [Item] = ["ctrl", "fn", "rcmd", "lcmd"]
@@ -59,7 +59,7 @@ public enum KeyMapError: Error, CustomStringConvertible, Equatable {
     case unknownKey(String)
     public var description: String {
         switch self {
-        case .unknownKey(let k): return "不明なキー指定: \(k)"
+        case .unknownKey(let k): return String(localized: "不明なキー指定: \(k)")
         }
     }
 }
@@ -223,19 +223,20 @@ public struct KeyCombo: Equatable, Sendable {
     /// 画面表示用の文字列(例: cmd+shift+p → ⌘⇧P)
     public static func displayText(_ text: String) -> String {
         let lowered = text.lowercased()
-        if lowered == ActionCatalog.disabled { return "無効" }
+        if lowered == ActionCatalog.disabled { return String(localized: "無効") }
         if lowered.hasPrefix("media:"), let item = ActionCatalog.mediaKeys[String(lowered.dropFirst(6))] {
             return item.title
         }
         if lowered.hasPrefix("dictation:"), let item = ActionCatalog.dictationTriggers[String(lowered.dropFirst(10))] {
-            return "音声入力(\(item.title))"
+            return String(localized: "音声入力(\(item.title))")
         }
         if lowered.hasPrefix("system:"), let item = ActionCatalog.systemActions[String(lowered.dropFirst(7))] {
             return item.title
         }
         let symbols = [
             "cmd": "⌘", "shift": "⇧", "opt": "⌥", "alt": "⌥", "ctrl": "⌃", "fn": "fn",
-            "rcmd": "右⌘", "rshift": "右⇧", "ropt": "右⌥", "rctrl": "右⌃",
+            "rcmd": String(localized: "右⌘"), "rshift": String(localized: "右⇧"),
+            "ropt": String(localized: "右⌥"), "rctrl": String(localized: "右⌃"),
             "return": "↩", "enter": "↩", "escape": "⎋", "esc": "⎋", "tab": "⇥", "space": "Space", "delete": "⌫",
             "up": "↑", "down": "↓", "left": "←", "right": "→",
         ]

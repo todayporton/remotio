@@ -6,7 +6,7 @@ public enum PCMOutputError: Error, CustomStringConvertible {
     case setDevice(OSStatus)
     public var description: String {
         switch self {
-        case .setDevice(let s): return "出力デバイスの設定に失敗: OSStatus \(s)"
+        case .setDevice(let s): return String(localized: "出力デバイスの設定に失敗: OSStatus \(s)")
         }
     }
 }
@@ -80,10 +80,10 @@ public final class PCMOutput {
                            format: engine.outputNode.inputFormat(forBus: 0))
             engine.prepare()
             try engine.start()
-            onLog?("音声出力を再開しました(デバイスの設定変更)")
+            onLog?(String(localized: "音声出力を再開しました(デバイスの設定変更)"))
         } catch {
             guard attemptsLeft > 1 else {
-                onLog?("音声出力を再開できません: \(error)")
+                onLog?(String(localized: "音声出力を再開できません: \(String(describing: error))"))
                 return
             }
             DispatchQueue.main.asyncAfter(deadline: .now() + 0.3) { [weak self] in

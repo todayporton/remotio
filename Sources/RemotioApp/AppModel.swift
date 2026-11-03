@@ -107,12 +107,12 @@ final class AppModel: ObservableObject {
             self.session = session
             let result = session.start()
             if result != kIOReturnSuccess {
-                startError = "リモコンを開けません: \(ioReturnDescription(result))"
+                startError = String(localized: "リモコンを開けません: \(ioReturnDescription(result))")
                 log(startError!)
             }
         } catch {
             startError = "\(error)"
-            log("起動エラー: \(error)")
+            log(String(localized: "起動エラー: \(String(describing: error))"))
         }
     }
 
@@ -131,7 +131,7 @@ final class AppModel: ObservableObject {
         // 設定画面を操作している間は送らない。解放は押しっぱなしを防ぐために常に送る
         if action.isDown && isSettingsWindowActive { return }
         guard KeyInjector.isTrusted else {
-            if action.isDown { log("アクセシビリティの権限がないためキーを送信しません") }
+            if action.isDown { log(String(localized: "アクセシビリティの権限がないためキーを送信しません")) }
             return
         }
         KeyInjector.post(action)
@@ -154,7 +154,7 @@ final class AppModel: ObservableObject {
 
     private func applySuppression() {
         guard let suppressor else { return }
-        log("元のキー入力の無効化: \(suppressor.apply() ? "成功" : "失敗")")
+        log(suppressor.apply() ? String(localized: "元のキー入力の無効化: 成功") : String(localized: "元のキー入力の無効化: 失敗"))
     }
 
     /// 今の設定で音声を送る先。使えるものがなければ nil。
@@ -175,9 +175,9 @@ final class AppModel: ObservableObject {
             new.onLog = { [weak self] in self?.log($0) }
             try new.start()
             output = new
-            log("音声の送り先: \(device.name)")
+            log(String(localized: "音声の送り先: \(device.name)"))
         } catch {
-            log("音声出力を開始できません: \(error)")
+            log(String(localized: "音声出力を開始できません: \(String(describing: error))"))
         }
     }
 
@@ -203,7 +203,7 @@ final class AppModel: ObservableObject {
             let error = task()
             DispatchQueue.main.async {
                 self?.driverError = error
-                if let error { self?.log("ドライバの処理に失敗: \(error)") }
+                if let error { self?.log(String(localized: "ドライバの処理に失敗: \(error)")) }
                 self?.waitForAudioSystem(attemptsLeft: 10)
             }
         }
@@ -248,7 +248,7 @@ final class AppModel: ObservableObject {
             try process.run()
             NSApp.terminate(nil)
         } catch {
-            log("アプリを開き直せません: \(error)")
+            log(String(localized: "アプリを開き直せません: \(String(describing: error))"))
         }
     }
 
@@ -285,7 +285,7 @@ final class AppModel: ObservableObject {
         do {
             if enabled { try SMAppService.mainApp.register() } else { try SMAppService.mainApp.unregister() }
         } catch {
-            log("ログイン時の起動を変更できません: \(error.localizedDescription)")
+            log(String(localized: "ログイン時の起動を変更できません: \(error.localizedDescription)"))
         }
         refreshPermissions()
     }
@@ -299,9 +299,9 @@ final class AppModel: ObservableObject {
 
     /// メニューとボタンに出す、何も割り当てていないときの名前
     func unassignedTitle(_ button: String) -> String {
-        if button == profile.voiceButtonName { return "キーなし" }
-        guard profile.systemUsage(of: button) != nil else { return "割り当てなし" }
-        return profile.standardActionName(of: button).map { "標準(\($0))" } ?? "標準"
+        if button == profile.voiceButtonName { return String(localized: "キーなし") }
+        guard profile.systemUsage(of: button) != nil else { return String(localized: "割り当てなし") }
+        return profile.standardActionName(of: button).map { String(localized: "標準(\($0))") } ?? String(localized: "標準")
     }
 
     func restoreDefaultBindings() { save(KeyMap.defaultBindings) }
@@ -314,7 +314,7 @@ final class AppModel: ObservableObject {
             keymapError = nil
             rebuildMapping()
             if connected { applySuppression() }
-            log("キー割り当てを保存しました")
+            log(String(localized: "キー割り当てを保存しました"))
         } catch {
             keymapError = "\(error)"
         }
@@ -324,7 +324,7 @@ final class AppModel: ObservableObject {
         releaseKeys()
         KeyInjector.flush()
         session?.shutdown()
-        if connected, let suppressor, !suppressor.clear() { log("元のキー入力の設定を戻せませんでした") }
+        if connected, let suppressor, !suppressor.clear() { log(String(localized: "元のキー入力の設定を戻せませんでした")) }
         output?.stop()
     }
 }

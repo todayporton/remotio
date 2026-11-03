@@ -13,6 +13,8 @@ cp /opt/homebrew/opt/opus/COPYING "$APP/Contents/Resources/libopus-COPYING.txt"
 cp Vendor/libASPL/LICENSE "$APP/Contents/Resources/libASPL-LICENSE.txt"
 cp -R build/RemotioMicrophone.driver "$APP/Contents/Resources/"
 cp Assets/AppIcon.icns "$APP/Contents/Resources/"
+# 翻訳ファイル(英語と日本語)
+cp -R Resources/Localization/en.lproj Resources/Localization/ja.lproj "$APP/Contents/Resources/"
 cp "$BIN" "$APP/Contents/MacOS/Remotio"
 cp -L "$OPUS" "$APP/Contents/Frameworks/"
 chmod u+w "$APP"/Contents/MacOS/* "$APP"/Contents/Frameworks/*
@@ -26,6 +28,8 @@ cat > "$APP/Contents/Info.plist" <<'P'
 <key>CFBundleExecutable</key><string>Remotio</string>
 <key>CFBundleName</key><string>Remotio</string>
 <key>CFBundleIconFile</key><string>AppIcon</string>
+<key>CFBundleDevelopmentRegion</key><string>en</string>
+<key>CFBundleLocalizations</key><array><string>en</string><string>ja</string></array>
 <key>CFBundlePackageType</key><string>APPL</string>
 <key>CFBundleShortVersionString</key><string>0.1.0</string>
 <key>CFBundleVersion</key><string>1</string>
