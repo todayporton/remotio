@@ -313,12 +313,15 @@ struct ButtonsPage: View {
         return ZStack {
             HStack(alignment: .top, spacing: 40) {
                 column(layout.left)
+                Color.clear.frame(width: 126)
+                column(layout.right)
+            }
+            // リモコン図は割り当ての一覧の縦の中央に置く
+            .overlay {
                 RemoteDrawing(layout: layout, pressed: model.pressedButtons, selected: selected ?? recording) { id in
                     startRecording(id)
                 }
                 .frame(width: 126, height: 126 / layout.aspect)
-                .padding(.top, 14)
-                column(layout.right)
             }
             // リモコン図は暗いので、線は図の上に重ねて描く
             leaderLines.allowsHitTesting(false)

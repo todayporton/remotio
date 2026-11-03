@@ -48,94 +48,149 @@ struct RemoteLayout {
 
     // MARK: 部品
 
+    /// y は「幅を1とした上端からの長さ」で書き、図の高さで割って割合にする
     private static func button(_ id: String, _ title: String, _ symbol: String, _ x: CGFloat, _ y: CGFloat,
-                               size: CGFloat = 0.23, shape: RemoteButton.Shape = .round,
+                               height: CGFloat, size: CGFloat = 0.23, shape: RemoteButton.Shape = .round,
                                glyph: String? = nil) -> RemoteButton {
-        RemoteButton(id: id, title: title, symbol: symbol, position: .init(x: x, y: y),
+        RemoteButton(id: id, title: title, symbol: symbol, position: .init(x: x, y: y / height),
                      size: .init(width: size, height: size), shape: shape, glyph: glyph)
     }
 
-    private static func app(_ number: Int, _ x: CGFloat, _ y: CGFloat, width: CGFloat, height: CGFloat) -> RemoteButton {
+    private static func app(_ number: Int, _ x: CGFloat, _ y: CGFloat, height: CGFloat) -> RemoteButton {
         RemoteButton(id: "app_a\(number)", title: String(localized: "アプリ \(number)"), symbol: "\(number).circle",
-                     position: .init(x: x, y: y), size: .init(width: width, height: height), shape: .app,
+                     position: .init(x: x, y: y / height), size: .init(width: 0.37, height: 0.135), shape: .app,
                      glyph: "\(number)")
     }
 
-    private static let powerTitle = String(localized: "電源")
-    private static let voiceTitle = String(localized: "音声(Push-to-Talk)")
+    // 2機種は上から早送りの段まで同じ配置。Pro は音量の段の並びが違い、ミュートとカスタムボタンの段が
+    // 1段増えたぶん下に長い。大きさは幅を1とした値
+    private static let rowSpacing: CGFloat = 0.256
+    private static let topY: CGFloat = 0.176
+    private static let voiceY: CGFloat = 0.395
+    private static let ringY: CGFloat = 0.944
+    private static let ringDiameter: CGFloat = 0.82
+    private static let arrowOffset: CGFloat = 0.3
+    private static let backRowY: CGFloat = 1.537
+    private static let rewindRowY = backRowY + rowSpacing
+    /// 縦長ボタンの上と下のボタン
+    private static let rockerTopY: CGFloat = 2.115
+    private static let rockerBottomY: CGFloat = 2.361
+    private static let rockerSize = CGSize(width: 0.24, height: 0.5)
+    /// Pro で増えた段のぶん(無印との長さの差)
+    private static let proExtra: CGFloat = 0.406
+    private static let standardHeight: CGFloat = 3.66
+    private static let proHeight = standardHeight + proExtra
+    private static let appRowY: CGFloat = 2.606
+    private static let appRowSpacing: CGFloat = 0.22
+
+    /// 2機種に共通の上半分(電源から早送りまで)
+    private static func topHalf(height h: CGFloat) -> (left: [RemoteButton], right: [RemoteButton]) {
+        let arrowY = arrowOffset
+        return (
+            left: [
+                button("power", String(localized: "電源"), "power", 0.15, topY, height: h, size: 0.15),
+                button("voice", String(localized: "音声(Push-to-Talk)"), "mic.fill", 0.5, voiceY, height: h,
+                       size: 0.24, shape: .voice),
+                button("dpad_up", String(localized: "上"), "chevron.up", 0.5, ringY - arrowY, height: h,
+                       size: 0.16, shape: .arrow),
+                button("dpad_left", String(localized: "左"), "chevron.left", 0.5 - arrowOffset, ringY, height: h,
+                       size: 0.16, shape: .arrow),
+                button("back", String(localized: "戻る"), "arrow.uturn.backward", 0.19, backRowY, height: h),
+            ],
+            right: [
+                button("select", String(localized: "決定"), "circle.circle", 0.5, ringY, height: h,
+                       size: 0.4, shape: .select),
+                button("dpad_right", String(localized: "右"), "chevron.right", 0.5 + arrowOffset, ringY, height: h,
+                       size: 0.16, shape: .arrow),
+                button("dpad_down", String(localized: "下"), "chevron.down", 0.5, ringY + arrowY, height: h,
+                       size: 0.16, shape: .arrow),
+                button("menu", String(localized: "メニュー"), "line.3.horizontal", 0.81, backRowY, height: h),
+            ]
+        )
+    }
+
+    private static func home(_ h: CGFloat) -> RemoteButton {
+        button("home", String(localized: "ホーム"), "house", 0.5, backRowY, height: h)
+    }
+    private static func rewind(_ h: CGFloat) -> RemoteButton {
+        button("rewind", String(localized: "巻き戻し"), "backward.fill", 0.19, rewindRowY, height: h)
+    }
+    private static func playPause(_ h: CGFloat) -> RemoteButton {
+        button("play_pause", String(localized: "再生・停止"), "playpause.fill", 0.5, rewindRowY, height: h)
+    }
+    private static func fastForward(_ h: CGFloat) -> RemoteButton {
+        button("fast_forward", String(localized: "早送り"), "forward.fill", 0.81, rewindRowY, height: h)
+    }
+    private static func volumeUp(_ x: CGFloat, _ h: CGFloat) -> RemoteButton {
+        button("volume_up", String(localized: "音量 +"), "speaker.plus", x, rockerTopY, height: h,
+               shape: .rocker, glyph: "plus")
+    }
+    private static func volumeDown(_ x: CGFloat, _ h: CGFloat) -> RemoteButton {
+        button("volume_down", String(localized: "音量 −"), "speaker.minus", x, rockerBottomY, height: h,
+               shape: .rocker, glyph: "minus")
+    }
+    private static func rocker(_ x: CGFloat, _ h: CGFloat) -> (center: CGPoint, size: CGSize) {
+        (.init(x: x, y: (rockerTopY + rockerBottomY) / 2 / h), rockerSize)
+    }
 
     // MARK: Fire TV Stick 4K 付属リモコン(第3世代)
 
-    static let standard = RemoteLayout(
-        left: [
-            button("power", powerTitle, "power", 0.15, 0.048, size: 0.15),
-            button("voice", voiceTitle, "mic.fill", 0.5, 0.108, size: 0.24, shape: .voice),
-            button("dpad_up", String(localized: "上"), "chevron.up", 0.5, 0.18, size: 0.16, shape: .arrow),
-            button("dpad_left", String(localized: "左"), "chevron.left", 0.2, 0.258, size: 0.16, shape: .arrow),
-            button("back", String(localized: "戻る"), "arrow.uturn.backward", 0.19, 0.42),
-            button("rewind", String(localized: "巻き戻し"), "backward.fill", 0.19, 0.49),
-            button("volume_up", String(localized: "音量 +"), "speaker.plus", 0.5, 0.578, shape: .rocker, glyph: "plus"),
-            button("mute", String(localized: "ミュート"), "speaker.slash", 0.19, 0.575),
-            app(1, 0.29, 0.712, width: 0.37, height: 0.135),
-            app(3, 0.29, 0.772, width: 0.37, height: 0.135),
-        ],
-        right: [
-            button("select", String(localized: "決定"), "circle.circle", 0.5, 0.258, size: 0.4, shape: .select),
-            button("dpad_right", String(localized: "右"), "chevron.right", 0.8, 0.258, size: 0.16, shape: .arrow),
-            button("dpad_down", String(localized: "下"), "chevron.down", 0.5, 0.336, size: 0.16, shape: .arrow),
-            button("home", String(localized: "ホーム"), "house", 0.5, 0.42),
-            button("menu", String(localized: "メニュー"), "line.3.horizontal", 0.81, 0.42),
-            button("play_pause", String(localized: "再生・停止"), "playpause.fill", 0.5, 0.49),
-            button("fast_forward", String(localized: "早送り"), "forward.fill", 0.81, 0.49),
-            button("volume_down", String(localized: "音量 −"), "speaker.minus", 0.5, 0.645, shape: .rocker, glyph: "minus"),
-            button("tv", "TV", "tv", 0.81, 0.575),
-            app(2, 0.71, 0.712, width: 0.37, height: 0.135),
-            app(4, 0.71, 0.772, width: 0.37, height: 0.135),
-        ],
-        aspect: 1 / 3.66,
-        ringCenter: .init(x: 0.5, y: 0.258), ringDiameter: 0.82,
-        rockers: [(.init(x: 0.5, y: 0.6115), .init(width: 0.24, height: 0.5))]
-    )
+    static let standard: RemoteLayout = {
+        let h = standardHeight
+        let top = topHalf(height: h)
+        return RemoteLayout(
+            left: top.left + [
+                rewind(h),
+                volumeUp(0.5, h),
+                button("mute", String(localized: "ミュート"), "speaker.slash", 0.19, rockerTopY, height: h),
+                app(1, 0.29, appRowY, height: h),
+                app(3, 0.29, appRowY + appRowSpacing, height: h),
+            ],
+            right: [top.right[0], top.right[1], top.right[2], home(h), top.right[3], playPause(h), fastForward(h),
+                    volumeDown(0.5, h),
+                    button("tv", "TV", "tv", 0.81, rockerTopY, height: h),
+                    app(2, 0.71, appRowY, height: h),
+                    app(4, 0.71, appRowY + appRowSpacing, height: h)],
+            aspect: 1 / h,
+            ringCenter: .init(x: 0.5, y: ringY / h), ringDiameter: ringDiameter,
+            rockers: [rocker(0.5, h)]
+        )
+    }()
 
-    // MARK: Amazon Remote Pro(互換品で確認。無印より約11%長い)
+    // MARK: Amazon Remote Pro(互換品で確認)
 
-    static let pro = RemoteLayout(
-        left: [
-            button("power", powerTitle, "power", 0.156, 0.05, size: 0.15),
-            button("voice", voiceTitle, "mic.fill", 0.5, 0.111, size: 0.24, shape: .voice),
-            button("dpad_up", String(localized: "上"), "chevron.up", 0.5, 0.186, size: 0.16, shape: .arrow),
-            button("dpad_left", String(localized: "左"), "chevron.left", 0.19, 0.261, size: 0.16, shape: .arrow),
-            button("back", String(localized: "戻る"), "arrow.uturn.backward", 0.19, 0.415),
-            button("home", String(localized: "ホーム"), "house", 0.5, 0.415),
-            button("rewind", String(localized: "巻き戻し"), "backward.fill", 0.19, 0.491),
-            button("play_pause", String(localized: "再生・停止"), "playpause.fill", 0.5, 0.491),
-            button("volume_up", String(localized: "音量 +"), "speaker.plus", 0.19, 0.569, shape: .rocker, glyph: "plus"),
-            button("volume_down", String(localized: "音量 −"), "speaker.minus", 0.19, 0.644, shape: .rocker, glyph: "minus"),
-            button("mute", String(localized: "ミュート"), "speaker.slash", 0.19, 0.721),
-            button("custom_1", String(localized: "カスタム 1"), "1.square", 0.5, 0.721, shape: .text, glyph: "1"),
-            app(1, 0.27, 0.79, width: 0.39, height: 0.16),
-            app(3, 0.27, 0.852, width: 0.39, height: 0.16),
-        ],
-        right: [
-            button("headphones", String(localized: "ヘッドホン"), "headphones", 0.844, 0.05, size: 0.15),
-            button("select", String(localized: "決定"), "circle.circle", 0.5, 0.261, size: 0.46, shape: .select),
-            button("dpad_right", String(localized: "右"), "chevron.right", 0.81, 0.261, size: 0.16, shape: .arrow),
-            button("dpad_down", String(localized: "下"), "chevron.down", 0.5, 0.336, size: 0.16, shape: .arrow),
-            button("menu", String(localized: "メニュー"), "line.3.horizontal", 0.81, 0.415),
-            button("fast_forward", String(localized: "早送り"), "forward.fill", 0.81, 0.491),
-            button("tv", "TV", "tv", 0.5, 0.567),
-            button("channel_up", String(localized: "チャンネル +"), "arrowtriangle.up", 0.81, 0.569,
-                   shape: .rocker, glyph: "arrowtriangle.up.fill"),
-            button("settings", String(localized: "設定"), "gearshape", 0.5, 0.645),
-            button("channel_down", String(localized: "チャンネル −"), "arrowtriangle.down", 0.81, 0.644,
-                   shape: .rocker, glyph: "arrowtriangle.down.fill"),
-            button("custom_2", String(localized: "カスタム 2"), "2.square", 0.81, 0.721, shape: .text, glyph: "2"),
-            app(2, 0.73, 0.79, width: 0.39, height: 0.16),
-            app(4, 0.73, 0.852, width: 0.39, height: 0.16),
-        ],
-        aspect: 1 / 4.06,
-        ringCenter: .init(x: 0.5, y: 0.261), ringDiameter: 0.84,
-        rockers: [(.init(x: 0.19, y: 0.6065), .init(width: 0.235, height: 0.55)),
-                  (.init(x: 0.81, y: 0.6065), .init(width: 0.235, height: 0.55))]
-    )
+    static let pro: RemoteLayout = {
+        let h = proHeight
+        let top = topHalf(height: h)
+        let customRowY = rockerBottomY + 0.3
+        return RemoteLayout(
+            left: top.left + [
+                home(h), rewind(h), playPause(h),
+                volumeUp(0.19, h), volumeDown(0.19, h),
+                button("mute", String(localized: "ミュート"), "speaker.slash", 0.19, customRowY, height: h),
+                button("custom_1", String(localized: "カスタム 1"), "1.square", 0.5, customRowY, height: h,
+                       shape: .text, glyph: "1"),
+                app(1, 0.29, appRowY + proExtra, height: h),
+                app(3, 0.29, appRowY + proExtra + appRowSpacing, height: h),
+            ],
+            right: [
+                button("headphones", String(localized: "ヘッドホン"), "headphones", 0.85, topY, height: h, size: 0.15),
+            ] + top.right + [
+                fastForward(h),
+                button("tv", "TV", "tv", 0.5, rockerTopY, height: h),
+                button("channel_up", String(localized: "チャンネル +"), "arrowtriangle.up", 0.81, rockerTopY, height: h,
+                       shape: .rocker, glyph: "arrowtriangle.up.fill"),
+                button("channel_down", String(localized: "チャンネル −"), "arrowtriangle.down", 0.81, rockerBottomY,
+                       height: h, shape: .rocker, glyph: "arrowtriangle.down.fill"),
+                button("settings", String(localized: "設定"), "gearshape", 0.5, rockerBottomY, height: h),
+                button("custom_2", String(localized: "カスタム 2"), "2.square", 0.81, customRowY, height: h,
+                       shape: .text, glyph: "2"),
+                app(2, 0.71, appRowY + proExtra, height: h),
+                app(4, 0.71, appRowY + proExtra + appRowSpacing, height: h),
+            ],
+            aspect: 1 / h,
+            ringCenter: .init(x: 0.5, y: ringY / h), ringDiameter: ringDiameter,
+            rockers: [rocker(0.19, h), rocker(0.81, h)]
+        )
+    }()
 }
