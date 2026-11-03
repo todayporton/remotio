@@ -246,12 +246,39 @@ public struct KeyCombo: Equatable, Sendable {
     }
 }
 
+/// 長押ししたときの送り方
+public enum LongPressMode: String, CaseIterable, Sendable {
+    /// 1回だけ送る
+    case once
+    /// 押している間、押したままにする
+    case hold
+    /// 離すまで繰り返し送る
+    case `repeat`
+}
+
+/// タップ以外の押し方への割り当て
+public struct ButtonGestures: Equatable, Sendable {
+    public var long: KeyCombo?
+    public var longMode: LongPressMode = .once
+    public var double: KeyCombo?
+}
+
 /// ボタン名から操作への割り当て。JSON は {"dpad_up": "up", "mute": "none", "tv": "media:play_pause"} の形式。
 /// 指定のないボタンは、Mac の標準動作をそのまま通す。
+/// 長押しと2回押しは "tv.long"、"tv.double" に操作を、"tv.long.mode" に長押しの送り方を書く。
 public struct KeyMap: Sendable {
+    public static let longSuffix = ".long"
+    public static let doubleSuffix = ".double"
+    public static let longModeSuffix = ".long.mode"
+
+    /// タップ(押している間押したまま)の割り当て
     public let bindings: [String: KeyCombo]
     /// "none" を指定したボタン(標準動作も止める)
     public let disabledButtons: Set<String>
+    /// 長押しか2回押しを割り当てたボタン
+    public let gestures: [String: ButtonGestures]
+    /// 押し方を判定するボタンで、タップが「標準」のときに送る操作
+    public let standardKeys: [String: KeyCombo]
 
     public static let defaultBindings = [
         "dpad_up": "up", "dpad_down": "down", "dpad_left": "left", "dpad_right": "right",
@@ -259,13 +286,34 @@ public struct KeyMap: Sendable {
     ]
 
     /// Mac へ届く元のキー入力を止めるボタン
-    public var suppressedButtons: [String] { Array(bindings.keys) + Array(disabledButtons) }
+    public var suppressedButtons: [String] {
+        Array(Set(bindings.keys).union(disabledButtons).union(gestures.keys))
+    }
 
-    public init(_ bindings: [String: String]) throws {
-        disabledButtons = Set(bindings.filter { $0.value.lowercased() == ActionCatalog.disabled }.keys)
-        self.bindings = try bindings
+    /// - Parameter standardKeys: ボタンの標準動作と同じ操作(RemoteProfile.standardKey)
+    public init(_ bindings: [String: String], standardKeys: [String: String] = [:]) throws {
+        var taps: [String: String] = [:]
+        var gestures: [String: ButtonGestures] = [:]
+        for (key, value) in bindings {
+            if key.hasSuffix(Self.longModeSuffix) {
+                let button = String(key.dropLast(Self.longModeSuffix.count))
+                guard let mode = LongPressMode(rawValue: value) else { throw KeyMapError.unknownKey(value) }
+                gestures[button, default: ButtonGestures()].longMode = mode
+            } else if key.hasSuffix(Self.longSuffix) {
+                gestures[String(key.dropLast(Self.longSuffix.count)), default: ButtonGestures()].long = try KeyCombo(value)
+            } else if key.hasSuffix(Self.doubleSuffix) {
+                gestures[String(key.dropLast(Self.doubleSuffix.count)), default: ButtonGestures()].double = try KeyCombo(value)
+            } else {
+                taps[key] = value
+            }
+        }
+        disabledButtons = Set(taps.filter { $0.value.lowercased() == ActionCatalog.disabled }.keys)
+        self.bindings = try taps
             .filter { $0.value.lowercased() != ActionCatalog.disabled }
             .mapValues { try KeyCombo($0) }
+        // 送り方だけが残っていても、長押しも2回押しもなければ判定しない
+        self.gestures = gestures.filter { $0.value.long != nil || $0.value.double != nil }
+        self.standardKeys = try standardKeys.mapValues { try KeyCombo($0) }
     }
 
     public static func load(url: URL) throws -> KeyMap {
@@ -314,18 +362,31 @@ public final class ButtonKeyRouter {
     private let voiceReleaseDelay: TimeInterval
     private let post: (KeyAction) -> Void
     private var pending: (work: DispatchWorkItem, action: KeyAction)?
+    /// 長押しか2回押しを割り当てたボタンの判定。音声ボタンは Push-to-Talk を保つため対象外
+    private var recognizers: [String: GestureRecognizer] = [:]
 
     /// voiceReleaseDelay の既定値は出力前の待機(60ms)と到着のゆらぎ(実測で最大約43ms)の合計に余裕を持たせた値。
     public init(map: KeyMap, voiceButton: String, voiceReleaseDelay: TimeInterval = 0.12,
+                schedule: @escaping GestureScheduler = GestureTiming.mainQueue,
+                repeatInterval: TimeInterval = GestureTiming.repeatInterval,
                 post: @escaping (KeyAction) -> Void) {
         mapper = KeyMapper(map: map)
         self.voiceButton = voiceButton
         self.voiceReleaseDelay = voiceReleaseDelay
         self.post = post
+        for (button, gestures) in map.gestures where button != voiceButton {
+            recognizers[button] = GestureRecognizer(
+                tap: map.bindings[button] ?? map.standardKeys[button], gestures: gestures,
+                schedule: schedule, repeatInterval: repeatInterval, post: post)
+        }
     }
 
     public func process(_ event: ButtonEvent) {
         if event.isDown { flushPending() }
+        if let recognizer = recognizers[event.name] {
+            recognizer.process(isDown: event.isDown)
+            return
+        }
         guard let action = mapper.process(event) else { return }
         if event.name == voiceButton && !event.isDown {
             let work = DispatchWorkItem { [weak self] in self?.flushPending() }
@@ -339,6 +400,7 @@ public final class ButtonKeyRouter {
     /// 切断時や終了時に呼ぶ。押下中のキーをすべて解放する。
     public func releaseAll() {
         flushPending()
+        recognizers.values.forEach { $0.reset() }
         mapper.releaseAll().forEach(post)
     }
 

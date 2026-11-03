@@ -258,6 +258,8 @@ struct ButtonsPage: View {
     @State private var captureTap: KeyCaptureTap?
     @State private var heldModifier: CGKeyCode?
     @State private var frames: [String: CGRect] = [:]
+    /// 長押しと2回押しの設定を開いているボタン
+    @State private var editingGestures: String?
 
     var body: some View {
         VStack(alignment: .leading, spacing: 14) {
@@ -323,36 +325,39 @@ struct ButtonsPage: View {
                         .frame(minWidth: 84)
                         .accessibilityLabel("\(button.title) のキー入力を中止")
                 } else {
-                    actionMenu(button, binding: binding)
+                    actionMenu(id: button.id, title: button.title, binding: binding,
+                               unassigned: model.unassignedTitle(button.id), allowsDisabled: true)
+                    if button.id != model.voiceButtonName { gestureButton(button) }
                 }
             }
         }
     }
 
-    private func actionMenu(_ button: RemoteButton, binding: String?) -> some View {
+    private func actionMenu(id: String, title: String, binding: String?, unassigned: String,
+                            allowsDisabled: Bool) -> some View {
         Menu {
-            Button("キーを入力…") { startRecording(button.id) }
+            Button("キーを入力…") { startRecording(id) }
             Divider()
-            Button(model.unassignedTitle(button.id)) { assign(button, nil) }
-            Button("無効") { assign(button, ActionCatalog.disabled) }
+            Button(unassigned) { assign(id, nil) }
+            if allowsDisabled { Button("無効") { assign(id, ActionCatalog.disabled) } }
             Divider()
             Menu("音声入力") {
                 ForEach(ActionCatalog.dictationItems) { item in
-                    Button(item.title) { assign(button, item.id) }
+                    Button(item.title) { assign(id, item.id) }
                 }
             }
             Menu("メディア操作") {
                 ForEach(ActionCatalog.mediaItems) { item in
-                    Button(item.title) { assign(button, item.id) }
+                    Button(item.title) { assign(id, item.id) }
                 }
             }
             Menu("システム操作") {
                 ForEach(ActionCatalog.systemItems) { item in
-                    Button(item.title) { assign(button, item.id) }
+                    Button(item.title) { assign(id, item.id) }
                 }
             }
         } label: {
-            Text(binding.map(KeyCombo.displayText) ?? model.unassignedTitle(button.id))
+            Text(binding.map(KeyCombo.displayText) ?? unassigned)
                 .font(.body.weight(.medium))
                 .lineLimit(1)
         }
@@ -361,13 +366,82 @@ struct ButtonsPage: View {
         .padding(.horizontal, 8)
         .padding(.vertical, 3)
         .background(Color.primary.opacity(0.07), in: RoundedRectangle(cornerRadius: 6))
-        .accessibilityLabel("\(button.title) の操作")
-        .accessibilityValue(binding ?? model.unassignedTitle(button.id))
+        .accessibilityLabel("\(title) の操作")
+        .accessibilityValue(binding ?? unassigned)
+    }
+
+    /// 長押しと2回押しの設定を開くボタン。設定済みなら塗りつぶしのアイコンにする
+    private func gestureButton(_ button: RemoteButton) -> some View {
+        let configured = model.bindings["\(button.id)\(KeyMap.longSuffix)"] != nil
+            || model.bindings["\(button.id)\(KeyMap.doubleSuffix)"] != nil
+        return Button {
+            editingGestures = button.id
+        } label: {
+            Image(systemName: configured ? "hand.tap.fill" : "hand.tap")
+                .foregroundStyle(configured ? Color.accentColor : Color.secondary)
+        }
+        .buttonStyle(.borderless)
+        .help("長押しと2回押し")
+        .accessibilityLabel("\(button.title) の長押しと2回押し")
+        .popover(isPresented: Binding(get: { editingGestures == button.id },
+                                      set: { if !$0 { editingGestures = nil } })) {
+            gestureEditor(button)
+        }
+    }
+
+    private func gestureEditor(_ button: RemoteButton) -> some View {
+        let longID = "\(button.id)\(KeyMap.longSuffix)"
+        let doubleID = "\(button.id)\(KeyMap.doubleSuffix)"
+        let modeID = "\(button.id)\(KeyMap.longModeSuffix)"
+        let mode = model.bindings[modeID].flatMap(LongPressMode.init(rawValue:)) ?? .once
+        return VStack(alignment: .leading, spacing: 12) {
+            Text("\(button.title) の押し方").font(.headline)
+            Grid(alignment: .leading, horizontalSpacing: 12, verticalSpacing: 10) {
+                GridRow {
+                    Text("長押し")
+                    gestureMenu(id: longID, title: String(localized: "\(button.title) の長押し"))
+                }
+                GridRow {
+                    Text("送り方")
+                    Picker("送り方", selection: Binding(get: { mode },
+                                                     set: { model.setBinding(modeID, to: $0.rawValue) })) {
+                        Text("1回送る").tag(LongPressMode.once)
+                        Text("押している間").tag(LongPressMode.hold)
+                        Text("リピート").tag(LongPressMode.repeat)
+                    }
+                    .labelsHidden()
+                    .pickerStyle(.segmented)
+                    .fixedSize()
+                    .disabled(model.bindings[longID] == nil)
+                }
+                GridRow {
+                    Text("2回押し")
+                    gestureMenu(id: doubleID, title: String(localized: "\(button.title) の2回押し"))
+                }
+            }
+            Text("長押しか2回押しを割り当てると、Mac の標準動作は止まり、タップの操作は Remotio から送ります。2回押しを割り当てると、タップは約0.3秒遅れます。")
+                .font(.caption).foregroundStyle(.secondary)
+                .fixedSize(horizontal: false, vertical: true)
+        }
+        .padding(16)
+        .frame(width: 400)
+    }
+
+    private func gestureMenu(id: String, title: String) -> some View {
+        Group {
+            if recording == id {
+                Button("キーを入力…", action: clearSelection)
+                    .accessibilityLabel("\(title) のキー入力を中止")
+            } else {
+                actionMenu(id: id, title: title, binding: model.bindings[id],
+                           unassigned: String(localized: "割り当てなし"), allowsDisabled: false)
+            }
+        }
     }
 
     /// 操作を選び終えたら、選択状態とフォーカスを解除する
-    private func assign(_ button: RemoteButton, _ value: String?) {
-        model.setBinding(button.id, to: value)
+    private func assign(_ id: String, _ value: String?) {
+        model.setBinding(id, to: value)
         clearSelection()
     }
 
@@ -403,7 +477,7 @@ struct ButtonsPage: View {
                 if let error = model.keymapError {
                     Text(error).font(.callout).foregroundStyle(.red)
                 } else if let recording {
-                    let name = RemoteButton.all.first { $0.id == recording }?.title ?? recording
+                    let name = recordingTitle(recording)
                     Text("「\(name)」に割り当てるキーを押してください。修飾キーだけ(Fn、右 ⌥ など)も押して離すと設定できます。待ち受け中のキー入力は他のアプリへ送りません。")
                         .font(.callout)
                 } else {
@@ -418,6 +492,16 @@ struct ButtonsPage: View {
                 }
             }
         }
+    }
+
+    /// 待ち受け中の割り当ての名前(例: 「TV の長押し」)
+    private func recordingTitle(_ id: String) -> String {
+        for button in RemoteButton.all {
+            if id == button.id { return button.title }
+            if id == button.id + KeyMap.longSuffix { return String(localized: "\(button.title) の長押し") }
+            if id == button.id + KeyMap.doubleSuffix { return String(localized: "\(button.title) の2回押し") }
+        }
+        return id
     }
 
     private func startRecording(_ id: String) {

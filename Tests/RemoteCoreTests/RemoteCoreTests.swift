@@ -369,4 +369,128 @@ final class RemoteCoreTests: XCTestCase {
         XCTAssertEqual(KeyCombo.displayText("dictation:ctrl"), "音声入力(Control キーを2回押す)")
         XCTAssertEqual(ActionCatalog.dictationItems.count, 4)
     }
+
+    /// 押し方の判定用の時計。指定時刻まで進め、その間の予定を順に実行する
+    private final class FakeClock {
+        var now: TimeInterval = 0
+        private var tasks: [(id: Int, at: TimeInterval, work: () -> Void)] = []
+        private var nextID = 0
+
+        lazy var schedule: GestureScheduler = { [unowned self] delay, work in
+            let id = self.nextID
+            self.nextID += 1
+            self.tasks.append((id, self.now + delay, work))
+            return { [weak self] in self?.tasks.removeAll { $0.id == id } }
+        }
+
+        func advance(to time: TimeInterval) {
+            while let next = tasks.filter({ $0.at <= time }).min(by: { $0.at < $1.at }) {
+                tasks.removeAll { $0.id == next.id }
+                now = next.at
+                next.work()
+            }
+            now = time
+        }
+    }
+
+    private func gestureRouter(_ bindings: [String: String], clock: FakeClock,
+                               posted: @escaping (String) -> Void) throws -> ButtonKeyRouter {
+        let map = try KeyMap(bindings, standardKeys: ["mute": "media:mute"])
+        return ButtonKeyRouter(map: map, voiceButton: "voice", schedule: clock.schedule, repeatInterval: 0.1) {
+            posted("\($0.combo.text)\($0.isDown ? "↓" : "↑")")
+        }
+    }
+
+    func testTapLongAndDoublePress() throws {
+        let clock = FakeClock()
+        var log: [String] = []
+        let router = try gestureRouter(["tv": "a", "tv.long": "b", "tv.double": "c"], clock: clock) { log.append($0) }
+
+        // タップは、2回押しの待ち時間が過ぎてから送る
+        router.process(ButtonEvent(name: "tv", isDown: true)); clock.advance(to: 0.1)
+        router.process(ButtonEvent(name: "tv", isDown: false)); clock.advance(to: 0.35)
+        XCTAssertEqual(log, [])
+        clock.advance(to: 0.5)
+        XCTAssertEqual(log, ["a↓", "a↑"])
+
+        // 2回押しは、2回目の押下で送る
+        log = []
+        clock.advance(to: 1)
+        router.process(ButtonEvent(name: "tv", isDown: true)); clock.advance(to: 1.1)
+        router.process(ButtonEvent(name: "tv", isDown: false)); clock.advance(to: 1.2)
+        router.process(ButtonEvent(name: "tv", isDown: true))
+        XCTAssertEqual(log, ["c↓", "c↑"])
+        router.process(ButtonEvent(name: "tv", isDown: false)); clock.advance(to: 2)
+        XCTAssertEqual(log, ["c↓", "c↑"])
+
+        // 長押しは 0.5 秒で1回送り、離してもタップは送らない
+        log = []
+        router.process(ButtonEvent(name: "tv", isDown: true)); clock.advance(to: 2.4)
+        XCTAssertEqual(log, [])
+        clock.advance(to: 2.6)
+        XCTAssertEqual(log, ["b↓", "b↑"])
+        router.process(ButtonEvent(name: "tv", isDown: false)); clock.advance(to: 3.5)
+        XCTAssertEqual(log, ["b↓", "b↑"])
+    }
+
+    func testLongPressHoldAndRepeat() throws {
+        let clock = FakeClock()
+        var log: [String] = []
+        let router = try gestureRouter(["tv.long": "b", "tv.long.mode": "hold",
+                                        "menu.long": "d", "menu.long.mode": "repeat"], clock: clock) { log.append($0) }
+
+        // 押している間: 判定したら押し、離したら離す
+        router.process(ButtonEvent(name: "tv", isDown: true)); clock.advance(to: 1)
+        XCTAssertEqual(log, ["b↓"])
+        router.process(ButtonEvent(name: "tv", isDown: false))
+        XCTAssertEqual(log, ["b↓", "b↑"])
+
+        // リピート: 判定したら送り、間隔ごとに送り続け、離したら止める
+        log = []
+        router.process(ButtonEvent(name: "menu", isDown: true)); clock.advance(to: 1.4)
+        XCTAssertEqual(log, [])
+        clock.advance(to: 1.75)
+        XCTAssertEqual(log, ["d↓", "d↑", "d↓", "d↑", "d↓", "d↑"])
+        router.process(ButtonEvent(name: "menu", isDown: false)); clock.advance(to: 3)
+        XCTAssertEqual(log.count, 6)
+
+        // 押している間の途中で切断したら、押したままのキーを離す
+        log = []
+        router.process(ButtonEvent(name: "tv", isDown: true)); clock.advance(to: 4)
+        router.releaseAll()
+        XCTAssertEqual(log, ["b↓", "b↑"])
+    }
+
+    func testGesturesKeepOtherButtonsImmediateAndUseStandardTap() throws {
+        let clock = FakeClock()
+        var log: [String] = []
+        let router = try gestureRouter(["select": "return", "mute.double": "c", "voice": "fn", "voice.long": "b"],
+                                       clock: clock) { log.append($0) }
+        // 長押しも2回押しもないボタンは、押した瞬間に送る
+        router.process(ButtonEvent(name: "select", isDown: true))
+        XCTAssertEqual(log, ["return↓"])
+        router.process(ButtonEvent(name: "select", isDown: false))
+
+        // タップが「標準」なら、標準と同じ操作を Remotio から送る
+        log = []
+        router.process(ButtonEvent(name: "mute", isDown: true))
+        router.process(ButtonEvent(name: "mute", isDown: false)); clock.advance(to: 1)
+        XCTAssertEqual(log, ["media:mute↓", "media:mute↑"])
+
+        // 音声ボタンは Push-to-Talk を保つため、長押しを割り当てても押した瞬間に送る
+        log = []
+        router.process(ButtonEvent(name: "voice", isDown: true))
+        XCTAssertEqual(log, ["fn↓"])
+    }
+
+    func testKeyMapParsesGestureBindings() throws {
+        let map = try KeyMap(["tv": "a", "tv.long": "b", "tv.long.mode": "repeat", "menu.long.mode": "hold"])
+        XCTAssertEqual(map.bindings.keys.sorted(), ["tv"])
+        XCTAssertEqual(map.gestures["tv"]?.long?.text, "b")
+        XCTAssertEqual(map.gestures["tv"]?.longMode, .repeat)
+        // 送り方だけでは判定しない
+        XCTAssertNil(map.gestures["menu"])
+        XCTAssertEqual(Set(map.suppressedButtons), ["tv"])
+        XCTAssertThrowsError(try KeyMap(["tv.long.mode": "sometimes"]))
+    }
 }

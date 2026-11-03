@@ -26,6 +26,9 @@ public protocol RemoteProfile: Sendable {
     func systemUsage(of button: String) -> UInt64?
     /// ボタンの標準動作の名前。動作を確認できていないものは nil。
     func standardActionName(of button: String) -> String?
+    /// 標準動作と同じ操作を Remotio から送るときの設定(例: "media:mute")。元のキー入力を止めて
+    /// 押し方を判定するボタンで、タップを「標準」のままにしたときに使う。なければ nil。
+    func standardKey(of button: String) -> String?
 }
 
 /// Fire TV Stick 4K 付属リモコン。コード表は fire-remote-client (MIT) の調査結果に基づく。
@@ -83,6 +86,14 @@ public struct FireTVRemoteProfile: RemoteProfile {
             "dpad_up": "↑", "dpad_down": "↓", "dpad_left": "←", "dpad_right": "→",
             "select": "Enter", "play_pause": String(localized: "再生・停止"), "rewind": String(localized: "巻き戻し"), "fast_forward": String(localized: "早送り"),
             "volume_up": String(localized: "音量を上げる"), "volume_down": String(localized: "音量を下げる"), "mute": String(localized: "ミュート"),
+        ][button]
+    }
+
+    public func standardKey(of button: String) -> String? {
+        [
+            "dpad_up": "up", "dpad_down": "down", "dpad_left": "left", "dpad_right": "right", "select": "return",
+            "play_pause": "media:play_pause", "rewind": "media:rewind", "fast_forward": "media:fast_forward",
+            "volume_up": "media:volume_up", "volume_down": "media:volume_down", "mute": "media:mute",
         ][button]
     }
 

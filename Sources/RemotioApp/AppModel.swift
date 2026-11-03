@@ -146,12 +146,19 @@ final class AppModel: ObservableObject {
     private func rebuildMapping() {
         releaseKeys()
         do {
-            let map = try KeyMap(bindings)
+            let map = try KeyMap(bindings, standardKeys: standardKeys)
             router = ButtonKeyRouter(map: map, voiceButton: profile.voiceButtonName) { [weak self] in self?.post($0) }
             suppressor = KeySuppressor(profile: profile, buttons: map.suppressedButtons + [profile.voiceButtonName])
         } catch {
             keymapError = "\(error)"
         }
+    }
+
+    /// 押し方を判定するボタンで、タップが「標準」のときに送る操作
+    private var standardKeys: [String: String] {
+        Dictionary(uniqueKeysWithValues: RemoteButton.all.map(\.id).compactMap { id in
+            profile.standardKey(of: id).map { (id, $0) }
+        })
     }
 
     private func applySuppression() {
@@ -293,6 +300,8 @@ final class AppModel: ObservableObject {
     }
 
     /// 1 ボタンの割り当てを変更して保存する。nil で割り当てなし。
+    var voiceButtonName: String { profile.voiceButtonName }
+
     func setBinding(_ button: String, to key: String?) {
         var edited = bindings
         edited[button] = key
@@ -303,6 +312,9 @@ final class AppModel: ObservableObject {
     func unassignedTitle(_ button: String) -> String {
         if button == profile.voiceButtonName { return String(localized: "キーなし") }
         guard profile.systemUsage(of: button) != nil else { return String(localized: "割り当てなし") }
+        // 長押しか2回押しがあると元のキー入力を止めるので、Remotio から送れない標準動作は使えない
+        let hasGestures = bindings[button + KeyMap.longSuffix] != nil || bindings[button + KeyMap.doubleSuffix] != nil
+        if hasGestures && profile.standardKey(of: button) == nil { return String(localized: "割り当てなし") }
         return profile.standardActionName(of: button).map { String(localized: "標準(\($0))") } ?? String(localized: "標準")
     }
 
