@@ -194,4 +194,5 @@ EN = {
 "保存": "Save",
 "未対応のボタンの入力: %@": "Input from an unsupported button: %@",
 "電源": "Power",
+"約1秒遅れて反応します": "Responds about 1 s late",
 }

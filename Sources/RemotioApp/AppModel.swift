@@ -367,6 +367,9 @@ final class AppModel: ObservableObject {
     /// 1 ボタンの割り当てを変更して保存する。nil で割り当てなし。
     var voiceButtonName: String { profile.voiceButtonName }
 
+    /// 設定画面でボタン名の横に出す注意書き
+    func buttonNote(_ button: String) -> String? { profile.note(of: button) }
+
     /// 長押しと2回押しを設定できるボタンか
     func supportsGestures(_ button: String) -> Bool {
         button != profile.voiceButtonName && profile.reportsHold(of: button)

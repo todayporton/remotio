@@ -31,6 +31,8 @@ public protocol RemoteProfile: Sendable {
     func standardKey(of button: String) -> String?
     /// 押している間を報告するボタンか。押下と解放をまとめて送るボタンは長押しも2回押しも判定できない
     func reportsHold(of button: String) -> Bool
+    /// 設定画面でボタン名の横に出す注意書き。なければ nil
+    func note(of button: String) -> String?
 }
 
 /// Fire TV Stick 4K 付属リモコン。コード表は fire-remote-client (MIT) の調査結果に基づく。
@@ -101,6 +103,10 @@ public struct FireTVRemoteProfile: RemoteProfile {
 
     /// 電源ボタンは押してから約1秒後に押下と解放をまとめて送る(実機で確認)
     public func reportsHold(of button: String) -> Bool { button != "power" }
+
+    public func note(of button: String) -> String? {
+        button == "power" ? String(localized: "約1秒遅れて反応します") : nil
+    }
 
     public func systemUsage(of button: String) -> UInt64? {
         if let code = Self.keyboard.first(where: { $0.value == button && $0.key != 0x28 })?.key {

@@ -402,6 +402,9 @@ struct ButtonsPage: View {
                     .font(.callout.weight(.medium))
                     .lineLimit(1)
                     .foregroundStyle(binding == ActionCatalog.disabled ? Color.secondary : Color.primary)
+                if let note = model.buttonNote(button.id) {
+                    Text(note).font(.caption).foregroundStyle(.secondary).lineLimit(1)
+                }
                 Spacer(minLength: 4)
                 if isRecording {
                     Button("キーを入力…", action: clearSelection)
