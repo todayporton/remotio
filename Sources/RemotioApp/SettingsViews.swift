@@ -235,6 +235,8 @@ struct RemoteDrawing: View {
     var onSelect: ((String) -> Void)?
 
     private static let voiceBlue = Color(red: 0.1, green: 0.66, blue: 0.9)
+    /// 塗りつぶしの記号は横に広く大きく見えるので、ほかより小さく描く
+    private static let mediaKeys: Set<String> = ["rewind", "play_pause", "fast_forward"]
 
     var body: some View {
         GeometryReader { geo in
@@ -277,7 +279,8 @@ struct RemoteDrawing: View {
     private func key(_ button: RemoteButton, active: Bool, width w: CGFloat) -> some View {
         let size = CGSize(width: button.size.width * w, height: button.size.height * w)
         let glyph = Image(systemName: button.glyph ?? button.symbol)
-            .font(.system(size: min(size.width, size.height) * 0.46, weight: .semibold))
+            .font(.system(size: min(size.width, size.height) * (Self.mediaKeys.contains(button.id) ? 0.34 : 0.46),
+                          weight: .semibold))
         return Button { onSelect?(button.id) } label: {
             ZStack {
                 switch button.shape {
