@@ -243,10 +243,10 @@ struct RemoteDrawing: View {
             let w = geo.size.width, h = geo.size.height
             ZStack {
                 // 本体
-                RoundedRectangle(cornerRadius: w * 0.32)
+                RoundedRectangle(cornerRadius: w * 0.24)
                     .fill(LinearGradient(colors: [Color(white: 0.17), Color(white: 0.08)],
                                          startPoint: .top, endPoint: .bottom))
-                    .overlay(RoundedRectangle(cornerRadius: w * 0.32).strokeBorder(Color.white.opacity(0.08)))
+                    .overlay(RoundedRectangle(cornerRadius: w * 0.24).strokeBorder(Color.white.opacity(0.08)))
                     .shadow(color: .black.opacity(0.25), radius: 8, y: 3)
                 // マイクの穴と電源ボタン(電源は Mac に届かないので飾り)
                 Capsule().fill(Color.black).frame(width: w * 0.025, height: w * 0.06)
