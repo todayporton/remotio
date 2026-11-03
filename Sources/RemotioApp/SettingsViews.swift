@@ -410,7 +410,7 @@ struct ButtonsPage: View {
                 } else {
                     actionMenu(id: button.id, title: button.title, binding: binding,
                                unassigned: model.unassignedTitle(button.id), allowsDisabled: true)
-                    if button.id != model.voiceButtonName { gestureButton(button) }
+                    if model.supportsGestures(button.id) { gestureButton(button) }
                 }
             }
         }

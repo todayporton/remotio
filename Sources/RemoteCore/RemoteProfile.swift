@@ -29,6 +29,8 @@ public protocol RemoteProfile: Sendable {
     /// 標準動作と同じ操作を Remotio から送るときの設定(例: "media:mute")。元のキー入力を止めて
     /// 押し方を判定するボタンで、タップを「標準」のままにしたときに使う。なければ nil。
     func standardKey(of button: String) -> String?
+    /// 押している間を報告するボタンか。押下と解放をまとめて送るボタンは長押しも2回押しも判定できない
+    func reportsHold(of button: String) -> Bool
 }
 
 /// Fire TV Stick 4K 付属リモコン。コード表は fire-remote-client (MIT) の調査結果に基づく。
@@ -96,6 +98,9 @@ public struct FireTVRemoteProfile: RemoteProfile {
             "volume_up": "media:volume_up", "volume_down": "media:volume_down", "mute": "media:mute",
         ][button]
     }
+
+    /// 電源ボタンは押してから約1秒後に押下と解放をまとめて送る(実機で確認)
+    public func reportsHold(of button: String) -> Bool { button != "power" }
 
     public func systemUsage(of button: String) -> UInt64? {
         if let code = Self.keyboard.first(where: { $0.value == button && $0.key != 0x28 })?.key {

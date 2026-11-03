@@ -53,6 +53,9 @@ final class RemoteCoreTests: XCTestCase {
                        [ButtonEvent(name: "power", isDown: true)])
         // 割り当てたときに元の入力を止められるよう、Keyboard Power の usage を返す
         XCTAssertEqual(profile.systemUsage(of: "power"), 0x7_0000_0066)
+        // 押下と解放がまとめて届くので、長押しと2回押しは判定できない
+        XCTAssertFalse(profile.reportsHold(of: "power"))
+        XCTAssertTrue(profile.reportsHold(of: "select"))
     }
 
     func testStripReportID() {

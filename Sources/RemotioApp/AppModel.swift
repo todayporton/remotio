@@ -199,7 +199,12 @@ final class AppModel: ObservableObject {
     private func rebuildMapping() {
         releaseKeys()
         do {
-            let map = try KeyMap(activeBindings, standardKeys: standardKeys)
+            // 押している間が分からないボタンは、保存済みの長押しと2回押しの設定を使わない
+            let bindings = activeBindings.filter { key, _ in
+                guard let dot = key.firstIndex(of: ".") else { return true }
+                return profile.reportsHold(of: String(key[..<dot]))
+            }
+            let map = try KeyMap(bindings, standardKeys: standardKeys)
             router = ButtonKeyRouter(map: map, voiceButton: profile.voiceButtonName) { [weak self] in self?.post($0) }
             suppressor = KeySuppressor(profile: profile, buttons: map.suppressedButtons + [profile.voiceButtonName])
         } catch {
@@ -361,6 +366,11 @@ final class AppModel: ObservableObject {
 
     /// 1 ボタンの割り当てを変更して保存する。nil で割り当てなし。
     var voiceButtonName: String { profile.voiceButtonName }
+
+    /// 長押しと2回押しを設定できるボタンか
+    func supportsGestures(_ button: String) -> Bool {
+        button != profile.voiceButtonName && profile.reportsHold(of: button)
+    }
 
     /// 設定画面に表示する割り当て(編集中の対象のもの)
     var displayedBindings: [String: String] {
