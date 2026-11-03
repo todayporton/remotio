@@ -42,7 +42,7 @@ public struct FireTVRemoteProfile: RemoteProfile {
 
     static let keyboard: [UInt16: String] = [
         0x4F: "dpad_right", 0x50: "dpad_left", 0x51: "dpad_down", 0x52: "dpad_up",
-        0x58: "select", 0x28: "select", 0xF1: "back",
+        0x58: "select", 0x28: "select", 0xF1: "back", 0x66: "power",
     ]
     static let consumer: [UInt16: String] = [
         0x0221: "voice", 0x0223: "home", 0x0224: "back", 0x0040: "menu", 0x00E2: "mute",

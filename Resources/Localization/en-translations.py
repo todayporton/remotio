@@ -192,4 +192,6 @@ EN = {
 "ボタンを押したときに、この URL を開きます。Raycast などのアプリの URL も使えます。": "Opens this URL when you press the button. You can also use URLs for apps such as Raycast.",
 "ボタンを押したときに、ログインシェル(zsh)で実行します。あなたの権限で実行されるので、内容を確認してから設定してください。失敗したときはログに出ます。": "Runs in a login shell (zsh) when you press the button. It runs with your permissions, so check the command before you save it. Failures appear in the logs.",
 "保存": "Save",
+"未対応のボタンの入力: %@": "Input from an unsupported button: %@",
+"電源": "Power",
 }

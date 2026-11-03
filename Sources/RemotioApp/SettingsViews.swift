@@ -38,6 +38,7 @@ struct RemoteButton: Identifiable {
 
     // 位置と大きさは Fire TV Stick 4K の Alexa 対応音声認識リモコン(第3世代)に合わせている
     static let left: [RemoteButton] = [
+        button("power", String(localized: "電源"), "power", 0.15, 0.048, size: 0.15),
         button("voice", String(localized: "音声(Push-to-Talk)"), "mic.fill", 0.5, 0.108, size: 0.24, shape: .voice),
         button("dpad_up", String(localized: "上"), "chevron.up", 0.5, 0.18, size: 0.16, shape: .arrow),
         button("dpad_left", String(localized: "左"), "chevron.left", 0.2, 0.258, size: 0.16, shape: .arrow),
@@ -248,14 +249,9 @@ struct RemoteDrawing: View {
                                          startPoint: .top, endPoint: .bottom))
                     .overlay(RoundedRectangle(cornerRadius: w * 0.24).strokeBorder(Color.white.opacity(0.08)))
                     .shadow(color: .black.opacity(0.25), radius: 8, y: 3)
-                // マイクの穴と電源ボタン(電源は Mac に届かないので飾り)
+                // マイクの穴
                 Capsule().fill(Color.black).frame(width: w * 0.025, height: w * 0.06)
                     .position(x: w * 0.5, y: h * 0.038)
-                Circle().fill(Color(white: 0.2))
-                    .overlay(Image(systemName: "power").font(.system(size: w * 0.07, weight: .semibold))
-                        .foregroundStyle(Color(white: 0.75)))
-                    .frame(width: w * 0.15, height: w * 0.15)
-                    .position(x: w * 0.15, y: h * 0.048)
                 // 方向ボタンのリング
                 Circle()
                     .fill(Color(white: 0.04))

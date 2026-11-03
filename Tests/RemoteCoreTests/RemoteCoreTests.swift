@@ -46,6 +46,15 @@ final class RemoteCoreTests: XCTestCase {
         XCTAssertEqual(tracker.process(reportID: 0xF0, payload: [0xB8]), [])
     }
 
+    func testPowerButtonIsKeyboardPower() {
+        let profile = FireTVRemoteProfile()
+        var tracker = ButtonTracker(profile: profile)
+        XCTAssertEqual(tracker.process(reportID: 0x01, payload: [0x66, 0, 0]),
+                       [ButtonEvent(name: "power", isDown: true)])
+        // 割り当てたときに元の入力を止められるよう、Keyboard Power の usage を返す
+        XCTAssertEqual(profile.systemUsage(of: "power"), 0x7_0000_0066)
+    }
+
     func testStripReportID() {
         XCTAssertEqual(stripReportID(0xF0, from: [0xF0, 0xB8], expectedPayload: 1), [0xB8])
         XCTAssertEqual(stripReportID(0xF0, from: [0xB8, 0x00], expectedPayload: 2), [0xB8, 0x00])

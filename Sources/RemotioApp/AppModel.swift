@@ -141,6 +141,10 @@ final class AppModel: ObservableObject {
 
     private func handle(_ event: ButtonEvent) {
         if event.isDown { pressedButtons.insert(event.name) } else { pressedButtons.remove(event.name) }
+        // 対応表にない入力は、新しいボタンや別機種への対応を調べられるようにログへ残す
+        if event.isDown && !RemoteButton.all.contains(where: { $0.id == event.name }) {
+            log(String(localized: "未対応のボタンの入力: \(event.name)"))
+        }
         router?.process(event)
     }
 
