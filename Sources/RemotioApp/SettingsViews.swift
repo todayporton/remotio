@@ -326,6 +326,11 @@ struct ButtonsPage: View {
             Button(model.unassignedTitle(button.id)) { assign(button, nil) }
             Button("無効") { assign(button, ActionCatalog.disabled) }
             Divider()
+            Menu("音声入力") {
+                ForEach(ActionCatalog.dictationItems) { item in
+                    Button(item.title) { assign(button, item.id) }
+                }
+            }
             Menu("メディア操作") {
                 ForEach(ActionCatalog.mediaItems) { item in
                     Button(item.title) { assign(button, item.id) }

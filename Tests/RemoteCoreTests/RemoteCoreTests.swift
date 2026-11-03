@@ -342,4 +342,25 @@ final class RemoteCoreTests: XCTestCase {
                                      remoteConnected: false, microphoneReady: true)
         XCTAssertFalse(sleeping.shouldOpenAutomatically(dismissed: false))
     }
+
+    func testDictationTriggerTapsTheModifierTwiceOnPressAndRelease() throws {
+        let combo = try KeyCombo("dictation:ctrl")
+        XCTAssertTrue(combo.isDoubleTap)
+        let ctrl = CGEventFlags.maskControl.rawValue
+        let expected = [
+            InjectedKeyEvent(kind: .flagsChanged, keyCode: 59, flags: ctrl),
+            InjectedKeyEvent(kind: .flagsChanged, keyCode: 59, flags: 0),
+            InjectedKeyEvent(kind: .flagsChanged, keyCode: 59, flags: ctrl),
+            InjectedKeyEvent(kind: .flagsChanged, keyCode: 59, flags: 0),
+        ]
+        XCTAssertEqual(KeyAction(combo: combo, isDown: true).events, expected)
+        XCTAssertEqual(KeyAction(combo: combo, isDown: false).events, expected)
+
+        XCTAssertEqual(try KeyCombo("dictation:fn").keyCode, 63)
+        XCTAssertEqual(try KeyCombo("dictation:rcmd").keyCode, 54)
+        XCTAssertEqual(try KeyCombo("dictation:lcmd").keyCode, 55)
+        XCTAssertThrowsError(try KeyCombo("dictation:shift"))
+        XCTAssertEqual(KeyCombo.displayText("dictation:ctrl"), "音声入力(Control キーを2回押す)")
+        XCTAssertEqual(ActionCatalog.dictationItems.count, 4)
+    }
 }

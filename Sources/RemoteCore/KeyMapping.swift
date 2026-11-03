@@ -30,6 +30,17 @@ public enum ActionCatalog {
         "lock_screen": ("画面をロック", "ctrl+cmd+q"),
     ]
 
+    /// macOS の音声入力のショートカット(システム設定 > キーボード > 音声入力)。修飾キーを素早く2回押す
+    static let dictationTriggers: [String: (title: String, key: String)] = [
+        "ctrl": ("Control キーを2回押す", "ctrl"),
+        "fn": ("Fn(地球儀)キーを2回押す", "fn"),
+        "rcmd": ("右 Command キーを2回押す", "rcmd"),
+        "lcmd": ("左 Command キーを2回押す", "cmd"),
+    ]
+
+    public static let dictationItems: [Item] = ["ctrl", "fn", "rcmd", "lcmd"]
+        .map { Item(id: "dictation:\($0)", title: dictationTriggers[$0]!.title) }
+
     public static let mediaItems: [Item] = [
         "play_pause", "next", "previous", "fast_forward", "rewind",
         "volume_up", "volume_down", "mute", "brightness_up", "brightness_down",
@@ -62,6 +73,8 @@ public struct KeyCombo: Equatable, Sendable {
     public let mediaKey: Int32?
     /// 修飾キー単体のとき、そのキーのフラグ(Push-to-Talk で Fn などを押し続けるために使う)
     public let modifierOnlyFlag: UInt64?
+    /// 修飾キーを2回押す操作か(macOS の音声入力の開始と終了)。押したときと離したときの両方で2回押す
+    public let isDoubleTap: Bool
 
     static let modifierOnlyKeys: [String: (code: CGKeyCode, flag: CGEventFlags)] = [
         "cmd": (55, .maskCommand), "rcmd": (54, .maskCommand),
@@ -112,6 +125,15 @@ public struct KeyCombo: Equatable, Sendable {
                       mediaKey: nil, modifierOnlyFlag: resolved.modifierOnlyFlag)
             return
         }
+        if lowered.hasPrefix("dictation:") {
+            guard let trigger = ActionCatalog.dictationTriggers[String(lowered.dropFirst(10))],
+                  let modifier = Self.modifierOnlyKeys[trigger.key] else {
+                throw KeyMapError.unknownKey(text)
+            }
+            self.init(keyCode: modifier.code, flags: 0, text: lowered, mediaKey: nil,
+                      modifierOnlyFlag: modifier.flag.rawValue, isDoubleTap: true)
+            return
+        }
         if lowered.hasPrefix("media:") {
             guard let media = ActionCatalog.mediaKeys[String(lowered.dropFirst(6))] else {
                 throw KeyMapError.unknownKey(text)
@@ -136,12 +158,14 @@ public struct KeyCombo: Equatable, Sendable {
         }
     }
 
-    private init(keyCode: CGKeyCode, flags: UInt64, text: String, mediaKey: Int32?, modifierOnlyFlag: UInt64?) {
+    private init(keyCode: CGKeyCode, flags: UInt64, text: String, mediaKey: Int32?, modifierOnlyFlag: UInt64?,
+                 isDoubleTap: Bool = false) {
         self.keyCode = keyCode
         self.flags = flags
         self.text = text
         self.mediaKey = mediaKey
         self.modifierOnlyFlag = modifierOnlyFlag
+        self.isDoubleTap = isDoubleTap
     }
 
     /// 実際のキーボードがそのキーに付けるフラグ。矢印キーには Fn とテンキー、
@@ -186,6 +210,9 @@ public struct KeyCombo: Equatable, Sendable {
         if lowered == ActionCatalog.disabled { return "無効" }
         if lowered.hasPrefix("media:"), let item = ActionCatalog.mediaKeys[String(lowered.dropFirst(6))] {
             return item.title
+        }
+        if lowered.hasPrefix("dictation:"), let item = ActionCatalog.dictationTriggers[String(lowered.dropFirst(10))] {
+            return "音声入力(\(item.title))"
         }
         if lowered.hasPrefix("system:"), let item = ActionCatalog.systemActions[String(lowered.dropFirst(7))] {
             return item.title
@@ -320,6 +347,11 @@ public extension KeyAction {
     /// 例: ctrl+t の押下は ctrl(flagsChanged) → t(keyDown)、解放は t(keyUp) → ctrl(flagsChanged)。
     var events: [InjectedKeyEvent] {
         if combo.mediaKey != nil { return [] }
+        if combo.isDoubleTap, let flag = combo.modifierOnlyFlag {
+            let tap = [InjectedKeyEvent(kind: .flagsChanged, keyCode: combo.keyCode, flags: flag),
+                       InjectedKeyEvent(kind: .flagsChanged, keyCode: combo.keyCode, flags: 0)]
+            return tap + tap
+        }
         if let flag = combo.modifierOnlyFlag {
             return [InjectedKeyEvent(kind: .flagsChanged, keyCode: combo.keyCode, flags: isDown ? flag : 0)]
         }
