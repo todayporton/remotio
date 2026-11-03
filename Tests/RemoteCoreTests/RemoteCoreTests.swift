@@ -299,4 +299,22 @@ final class RemoteCoreTests: XCTestCase {
         XCTAssertEqual(AudioGain.meterPosition(peak: 0.1), 2.0 / 3, accuracy: 0.001)
         XCTAssertEqual(AudioGain.meterPosition(decibels: AudioGain.targetPeakDecibels), 0.8, accuracy: 0.001)
     }
+
+    func testMeterClearsAndIgnoresLatePacketsAfterMicStops() {
+        let meter = MicLevelMeter()
+        meter.update(peak: 1, clipped: true)
+        XCTAssertEqual(meter.position, 0)
+
+        meter.setActive(true)
+        meter.update(peak: 1, clipped: true)
+        XCTAssertEqual(meter.position, 1, accuracy: 0.001)
+        XCTAssertTrue(meter.clipping)
+
+        meter.setActive(false)
+        XCTAssertEqual(meter.position, 0)
+        XCTAssertFalse(meter.clipping)
+        meter.update(peak: 1, clipped: true)
+        XCTAssertEqual(meter.position, 0)
+        XCTAssertFalse(meter.clipping)
+    }
 }

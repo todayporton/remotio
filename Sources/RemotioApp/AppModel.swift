@@ -91,7 +91,7 @@ final class AppModel: ObservableObject {
             }
             session.onMicChange = { [weak self] enabled in
                 self?.micOn = enabled
-                self?.micMeter.reset()
+                self?.micMeter.setActive(enabled)
                 if enabled { self?.output?.beginSession() } else { self?.output?.endSession() }
             }
             session.onButton = { [weak self] event in self?.handle(event) }
