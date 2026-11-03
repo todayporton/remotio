@@ -505,7 +505,7 @@ struct MicInputSection: View {
                     .accessibilityValue("\(Int(meter.position * 100))%")
             }
             Text(meter.clipping ? "音が割れています。ゲインを下げてください。"
-                 : "音声ボタンを押して話すと、レベルを確認できます。設定画面が前面の間は、割り当てたキーを送りません。")
+                 : "音声ボタンを押して普通に話し、音の山が線(-12 dB)に届くくらいが目安です。設定画面が前面の間は、割り当てたキーを送りません。")
                 .font(.caption)
                 .foregroundStyle(meter.clipping ? Color.red : Color.secondary)
                 .fixedSize(horizontal: false, vertical: true)
@@ -522,13 +522,18 @@ struct MicMeterBar: View {
                 Capsule().fill(Color.primary.opacity(0.1))
                 LinearGradient(stops: [
                     .init(color: .green, location: 0),
-                    .init(color: .green, location: 0.75),
+                    .init(color: .green, location: 0.85),
                     .init(color: .yellow, location: 0.9),
                     .init(color: .red, location: 1),
                 ], startPoint: .leading, endPoint: .trailing)
                 .mask(alignment: .leading) {
                     Capsule().frame(width: geometry.size.width * position)
                 }
+                // 普通に話したときのピークの目安
+                Rectangle()
+                    .fill(Color.primary)
+                    .frame(width: 2, height: geometry.size.height + 6)
+                    .offset(x: geometry.size.width * AudioGain.meterPosition(decibels: AudioGain.targetPeakDecibels) - 1)
             }
         }
     }

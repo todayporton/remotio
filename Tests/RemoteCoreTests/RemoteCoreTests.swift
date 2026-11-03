@@ -297,5 +297,6 @@ final class RemoteCoreTests: XCTestCase {
         XCTAssertEqual(AudioGain.meterPosition(peak: 0.0001), 0, accuracy: 0.001)
         XCTAssertEqual(AudioGain.meterPosition(peak: 1), 1, accuracy: 0.001)
         XCTAssertEqual(AudioGain.meterPosition(peak: 0.1), 2.0 / 3, accuracy: 0.001)
+        XCTAssertEqual(AudioGain.meterPosition(decibels: AudioGain.targetPeakDecibels), 0.8, accuracy: 0.001)
     }
 }

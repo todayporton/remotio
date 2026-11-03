@@ -7,6 +7,9 @@ public enum AudioGain {
     /// メーターの下限
     public static let meterFloorDecibels = -60.0
 
+    /// 普通に話したときのピークの目安。話し声を十分に拾いつつ、大きな声でも音割れまで余裕が残る
+    public static let targetPeakDecibels = -12.0
+
     public struct Result: Equatable {
         public let samples: [Int16]
         /// ゲイン適用後のピーク(0...1)
@@ -36,7 +39,10 @@ public enum AudioGain {
     /// ピークをメーターの位置(0...1)に変換する。-60 dB 以下は 0、0 dB は 1。
     public static func meterPosition(peak: Double) -> Double {
         guard peak > 0 else { return 0 }
-        let decibels = 20 * log10(peak)
-        return min(max((decibels - meterFloorDecibels) / -meterFloorDecibels, 0), 1)
+        return meterPosition(decibels: 20 * log10(peak))
+    }
+
+    public static func meterPosition(decibels: Double) -> Double {
+        min(max((decibels - meterFloorDecibels) / -meterFloorDecibels, 0), 1)
     }
 }
