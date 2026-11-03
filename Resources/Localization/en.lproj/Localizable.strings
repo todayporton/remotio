@@ -154,7 +154,7 @@
 "割り当てを切り替えました: %@" = "Switched assignments: %@";
 
 /* Sources/RemotioApp/AppModel.swift:182 */
-"共通の割り当てに戻しました" = "Switched back to assignments for all apps";
+"既定の割り当てに戻しました" = "Switched back to the global assignments";
 
 /* Sources/RemotioApp/AppModel.swift:219 */
 "元のキー入力の無効化: 成功" = "Original key input disabled";
@@ -283,7 +283,7 @@
 "音量 −" = "Volume −";
 
 /* Sources/RemotioApp/SettingsViews.swift:347 */
-"共通の設定に戻す" = "Use Setting for All Apps";
+"既定に戻す" = "Use Global";
 
 /* Sources/RemotioApp/SettingsViews.swift:355 */
 "音声入力" = "Dictation";
@@ -300,193 +300,193 @@
 /* Sources/RemotioApp/SettingsViews.swift:37 */
 "アプリ 4" = "App 4";
 
-/* Sources/RemotioApp/SettingsViews.swift:382 */
+/* Sources/RemotioApp/SettingsViews.swift:384 */
 "%@ の操作" = "Action for %@";
 
-/* Sources/RemotioApp/SettingsViews.swift:397 */
+/* Sources/RemotioApp/SettingsViews.swift:390 */
+"既定" = "Global";
+
+/* Sources/RemotioApp/SettingsViews.swift:405 */
 "長押しと2回押し" = "Long Press and Double Press";
 
-/* Sources/RemotioApp/SettingsViews.swift:398 */
+/* Sources/RemotioApp/SettingsViews.swift:406 */
 "%@ の長押しと2回押し" = "Long press and double press for %@";
 
-/* Sources/RemotioApp/SettingsViews.swift:411 */
+/* Sources/RemotioApp/SettingsViews.swift:419 */
 "%@ の押し方" = "Presses for %@";
 
-/* Sources/RemotioApp/SettingsViews.swift:414 */
+/* Sources/RemotioApp/SettingsViews.swift:422 */
 "長押し" = "Long Press";
 
-/* Sources/RemotioApp/SettingsViews.swift:415 */
+/* Sources/RemotioApp/SettingsViews.swift:423 */
 "%@ の長押し" = "Long press for %@";
 
-/* Sources/RemotioApp/SettingsViews.swift:418 */
+/* Sources/RemotioApp/SettingsViews.swift:426 */
 "送り方" = "Send";
 
-/* Sources/RemotioApp/SettingsViews.swift:421 */
+/* Sources/RemotioApp/SettingsViews.swift:429 */
 "1回送る" = "Once";
 
-/* Sources/RemotioApp/SettingsViews.swift:422 */
+/* Sources/RemotioApp/SettingsViews.swift:430 */
 "押している間" = "While Held";
 
-/* Sources/RemotioApp/SettingsViews.swift:423 */
+/* Sources/RemotioApp/SettingsViews.swift:431 */
 "リピート" = "Repeat";
 
-/* Sources/RemotioApp/SettingsViews.swift:431 */
+/* Sources/RemotioApp/SettingsViews.swift:439 */
 "2回押し" = "Double Press";
 
-/* Sources/RemotioApp/SettingsViews.swift:432 */
+/* Sources/RemotioApp/SettingsViews.swift:440 */
 "%@ の2回押し" = "Double press for %@";
 
-/* Sources/RemotioApp/SettingsViews.swift:435 */
+/* Sources/RemotioApp/SettingsViews.swift:443 */
 "長押しか2回押しを割り当てると、Mac の標準動作は止まり、タップの操作は Remotio から送ります。2回押しを割り当てると、タップは約0.3秒遅れます。" = "When you assign a long press or double press, the Mac's standard behavior stops and Remotio sends the tap action. With a double press assigned, taps are delayed by about 0.3 seconds.";
 
 /* Sources/RemotioApp/SettingsViews.swift:49 */
 "接続と音声" = "Connection & Audio";
 
-/* Sources/RemotioApp/SettingsViews.swift:494 */
-"「%@」に割り当てるキーを押してください。修飾キーだけ(Fn、右 ⌥ など)も押して離すと設定できます。待ち受け中のキー入力は他のアプリへ送りません。" = "Press the key to assign to \"%@\". To assign a modifier key alone (such as Fn or Right ⌥), press and release it. While waiting, key presses are not sent to other apps.";
-
-/* Sources/RemotioApp/SettingsViews.swift:497 */
-"「%@」が前面にあるときだけ使う割り当てです。色の付いた項目は共通の設定を上書きしています。メニューの「共通の設定に戻す」で戻せます。" = "These assignments are used only while \"%@\" is in front. Colored items override the setting for all apps. To undo one, choose \"Use Setting for All Apps\" from its menu.";
-
 /* Sources/RemotioApp/SettingsViews.swift:50 */
 "ボタン" = "Buttons";
 
-/* Sources/RemotioApp/SettingsViews.swift:500 */
+/* Sources/RemotioApp/SettingsViews.swift:502 */
+"「%@」に割り当てるキーを押してください。修飾キーだけ(Fn、右 ⌥ など)も押して離すと設定できます。待ち受け中のキー入力は他のアプリへ送りません。" = "Press the key to assign to \"%@\". To assign a modifier key alone (such as Fn or Right ⌥), press and release it. While waiting, key presses are not sent to other apps.";
+
+/* Sources/RemotioApp/SettingsViews.swift:505 */
+"「%@」が前面にあるときだけ使う割り当てです。「既定」の項目は既定の割り当てに従います。色の付いた項目はこのアプリだけの割り当てで、メニューの「既定に戻す」で戻せます。" = "These assignments are used only while \"%@\" is in front. Items shown as \"Global\" follow the global assignments. Colored items apply only to this app; choose \"Use Global\" from an item's menu to undo it.";
+
+/* Sources/RemotioApp/SettingsViews.swift:508 */
 "各ボタンのメニューから操作を選びます。「標準」は Mac の標準動作をそのまま通し、「無効」は何もしません。この画面を操作している間は、リモコンから割り当てたキーを送りません。" = "Choose an action from each button's menu. \"Default\" keeps the Mac's standard behavior, and \"Disabled\" does nothing. While you use this window, assigned keys are not sent from the remote.";
-
-/* Sources/RemotioApp/SettingsViews.swift:504 */
-"キャンセル" = "Cancel";
-
-/* Sources/RemotioApp/SettingsViews.swift:505 */
-"初期設定に戻す" = "Restore Defaults";
-
-/* Sources/RemotioApp/SettingsViews.swift:505 */
-"上書きをすべて消す" = "Remove All Overrides";
 
 /* Sources/RemotioApp/SettingsViews.swift:51 */
 "権限" = "Permissions";
 
+/* Sources/RemotioApp/SettingsViews.swift:512 */
+"キャンセル" = "Cancel";
+
+/* Sources/RemotioApp/SettingsViews.swift:513 */
+"初期設定に戻す" = "Restore Defaults";
+
+/* Sources/RemotioApp/SettingsViews.swift:513 */
+"すべて既定に戻す" = "Reset All to Global";
+
 /* Sources/RemotioApp/SettingsViews.swift:52 */
 "ログ" = "Logs";
 
-/* Sources/RemotioApp/SettingsViews.swift:521 */
-"共通(すべてのアプリ)" = "All Apps";
-
-/* Sources/RemotioApp/SettingsViews.swift:529 */
+/* Sources/RemotioApp/SettingsViews.swift:537 */
 "アプリを追加" = "Add App";
 
-/* Sources/RemotioApp/SettingsViews.swift:534 */
+/* Sources/RemotioApp/SettingsViews.swift:542 */
 "その他のアプリ…" = "Other App…";
 
-/* Sources/RemotioApp/SettingsViews.swift:538 */
+/* Sources/RemotioApp/SettingsViews.swift:546 */
 "「%@」の割り当てを削除" = "Remove Assignments for \"%@\"";
 
-/* Sources/RemotioApp/SettingsViews.swift:554 */
-"割り当ての対象" = "Assignments for";
-
-/* Sources/RemotioApp/SettingsViews.swift:627 */
-"F キーとして割り当てるには、Fn も一緒に押してください" = "To assign it as a function key, press Fn with it";
+/* Sources/RemotioApp/SettingsViews.swift:562 */
+"割り当ての対象" = "Assignment target";
 
 /* Sources/RemotioApp/SettingsViews.swift:635 */
+"F キーとして割り当てるには、Fn も一緒に押してください" = "To assign it as a function key, press Fn with it";
+
+/* Sources/RemotioApp/SettingsViews.swift:643 */
 "このキーは割り当てできません" = "This key can't be assigned";
 
-/* Sources/RemotioApp/SettingsViews.swift:666 */
+/* Sources/RemotioApp/SettingsViews.swift:674 */
 "マイク入力" = "Microphone Input";
 
-/* Sources/RemotioApp/SettingsViews.swift:668 */
+/* Sources/RemotioApp/SettingsViews.swift:676 */
 "ゲイン" = "Gain";
 
-/* Sources/RemotioApp/SettingsViews.swift:671 */
+/* Sources/RemotioApp/SettingsViews.swift:679 */
 "マイクのゲイン" = "Microphone gain";
 
-/* Sources/RemotioApp/SettingsViews.swift:675 */
+/* Sources/RemotioApp/SettingsViews.swift:683 */
 "リセット" = "Reset";
 
-/* Sources/RemotioApp/SettingsViews.swift:679 */
+/* Sources/RemotioApp/SettingsViews.swift:687 */
 "レベル" = "Level";
 
-/* Sources/RemotioApp/SettingsViews.swift:682 */
+/* Sources/RemotioApp/SettingsViews.swift:690 */
 "入力レベル" = "Input level";
 
-/* Sources/RemotioApp/SettingsViews.swift:683 */
+/* Sources/RemotioApp/SettingsViews.swift:691 */
 "%lld%%" = "%lld%%";
 
-/* Sources/RemotioApp/SettingsViews.swift:685 */
+/* Sources/RemotioApp/SettingsViews.swift:693 */
 "音が割れています。ゲインを下げてください。" = "The audio is clipping. Lower the gain.";
 
-/* Sources/RemotioApp/SettingsViews.swift:686 */
+/* Sources/RemotioApp/SettingsViews.swift:694 */
 "音声ボタンを押して普通に話し、音の山が線(-12 dB)に届くくらいが目安です。設定画面が前面の間は、割り当てたキーを送りません。" = "Hold the voice button and speak normally. Aim for peaks that reach the line (-12 dB). While this window is in front, assigned keys are not sent.";
 
-/* Sources/RemotioApp/SettingsViews.swift:729 */
+/* Sources/RemotioApp/SettingsViews.swift:737 */
 "Amazon Remote" = "Amazon Remote";
 
-/* Sources/RemotioApp/SettingsViews.swift:734 */
+/* Sources/RemotioApp/SettingsViews.swift:742 */
 "マイク動作中" = "Microphone On";
 
-/* Sources/RemotioApp/SettingsViews.swift:734 */
+/* Sources/RemotioApp/SettingsViews.swift:742 */
 "音声ボタンを押している間だけマイクが動きます" = "The microphone is on only while you hold the voice button";
 
-/* Sources/RemotioApp/SettingsViews.swift:748 */
+/* Sources/RemotioApp/SettingsViews.swift:756 */
 "仮想マイク" = "Virtual Microphone";
 
-/* Sources/RemotioApp/SettingsViews.swift:753 */
+/* Sources/RemotioApp/SettingsViews.swift:761 */
 "インストール" = "Install";
 
-/* Sources/RemotioApp/SettingsViews.swift:755 */
+/* Sources/RemotioApp/SettingsViews.swift:763 */
 "再インストール" = "Reinstall";
 
-/* Sources/RemotioApp/SettingsViews.swift:757 */
+/* Sources/RemotioApp/SettingsViews.swift:765 */
 "アンインストール" = "Uninstall";
 
-/* Sources/RemotioApp/SettingsViews.swift:766 */
+/* Sources/RemotioApp/SettingsViews.swift:774 */
 "他の出力デバイスを使う" = "Use another output device";
 
-/* Sources/RemotioApp/SettingsViews.swift:769 */
+/* Sources/RemotioApp/SettingsViews.swift:777 */
 "送り先" = "Destination";
 
-/* Sources/RemotioApp/SettingsViews.swift:770 */
+/* Sources/RemotioApp/SettingsViews.swift:778 */
 "なし" = "None";
 
-/* Sources/RemotioApp/SettingsViews.swift:776 */
+/* Sources/RemotioApp/SettingsViews.swift:784 */
 "更新" = "Refresh";
 
-/* Sources/RemotioApp/SettingsViews.swift:778 */
+/* Sources/RemotioApp/SettingsViews.swift:786 */
 "BlackHole などを選ぶと、リモコンの音声をそのデバイスへ送ります。使うアプリの入力には同じデバイスを選びます。" = "Choose a device such as BlackHole to send the remote's audio to it. In the app you use, choose the same device as the input.";
 
-/* Sources/RemotioApp/SettingsViews.swift:782 */
+/* Sources/RemotioApp/SettingsViews.swift:790 */
 "システムの既定の入出力デバイスは変更しません。" = "The system's default input and output devices are not changed.";
 
-/* Sources/RemotioApp/SettingsViews.swift:788 */
+/* Sources/RemotioApp/SettingsViews.swift:796 */
 "ログイン時に起動" = "Open at Login";
 
-/* Sources/RemotioApp/SettingsViews.swift:804 */
+/* Sources/RemotioApp/SettingsViews.swift:812 */
 "使用できます。音声入力を使うアプリの入力に「Remotio Microphone」を選んでください。" = "Ready. In the app you use for voice input, choose \"Remotio Microphone\" as the input.";
 
-/* Sources/RemotioApp/SettingsViews.swift:807 */
+/* Sources/RemotioApp/SettingsViews.swift:815 */
 "新しいバージョンへの更新が必要です。再インストールしてください。解決しない場合は Mac を再起動してください。" = "An update is required. Reinstall it. If that doesn't help, restart your Mac.";
 
-/* Sources/RemotioApp/SettingsViews.swift:809 */
+/* Sources/RemotioApp/SettingsViews.swift:817 */
 "他のアプリのマイクとして使うために必要です。管理者パスワードの入力が必要で、処理の間は Mac の音声が一瞬止まります。" = "Required to use the remote as a microphone in other apps. You'll need an administrator password, and your Mac's audio pauses briefly during installation.";
 
-/* Sources/RemotioApp/SettingsViews.swift:821 */
+/* Sources/RemotioApp/SettingsViews.swift:829 */
 "入力監視" = "Input Monitoring";
 
-/* Sources/RemotioApp/SettingsViews.swift:821 */
+/* Sources/RemotioApp/SettingsViews.swift:829 */
 "リモコンのボタンと音声を受け取るために必要です。変更後はアプリを開き直してください。" = "Required to receive the remote's buttons and audio. Reopen the app after changing it.";
 
-/* Sources/RemotioApp/SettingsViews.swift:823 */
+/* Sources/RemotioApp/SettingsViews.swift:831 */
 "アクセシビリティ" = "Accessibility";
 
-/* Sources/RemotioApp/SettingsViews.swift:823 */
+/* Sources/RemotioApp/SettingsViews.swift:831 */
 "割り当てたキーを送信するために必要です。" = "Required to send assigned keys.";
 
-/* Sources/RemotioApp/SettingsViews.swift:840 */
+/* Sources/RemotioApp/SettingsViews.swift:848 */
 "許可済み" = "Allowed";
 
-/* Sources/RemotioApp/SettingsViews.swift:842 */
+/* Sources/RemotioApp/SettingsViews.swift:850 */
 "許可を求める" = "Request Access";
 
-/* Sources/RemotioApp/SettingsViews.swift:859 */
+/* Sources/RemotioApp/SettingsViews.swift:867 */
 "まだログはありません。" = "No logs yet.";
 
 /* Sources/RemotioApp/SetupView.swift:137 */

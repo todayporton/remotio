@@ -20,11 +20,11 @@ final class AppModel: ObservableObject {
     @Published private(set) var driverError: String?
     /// 押されているボタン(画面のリモコン図とカードに反映する)
     @Published private(set) var pressedButtons: Set<String> = []
-    /// 共通の割り当て
+    /// 既定の割り当て(アプリごとの割り当てがないときに使う)
     @Published private(set) var bindings: [String: String] = KeyMap.defaultBindings
-    /// アプリごとの割り当て(バンドル ID → 共通の割り当てとの差分)
+    /// アプリごとの割り当て(バンドル ID → 既定の割り当てとの差分)
     @Published private(set) var appBindings: [String: [String: String]] = [:]
-    /// 設定画面で編集している対象。nil なら共通
+    /// 設定画面で編集している対象。nil なら既定
     @Published var editingApp: String?
     /// 割り当てに使っている前面のアプリ。Remotio 自身が前面のときは直前のアプリのまま
     @Published private(set) var activeApp: String?
@@ -179,7 +179,7 @@ final class AppModel: ObservableObject {
         // どちらのアプリにも個別の割り当てがなければ、作り直す必要はない
         guard before != nil || appBindings[bundleID] != nil else { return }
         log(appBindings[bundleID] != nil ? String(localized: "割り当てを切り替えました: \(AppInfo.name(of: bundleID))")
-                                         : String(localized: "共通の割り当てに戻しました"))
+                                         : String(localized: "既定の割り当てに戻しました"))
         rebuildMapping()
         if connected { applySuppressionIfChanged() }
     }
@@ -360,7 +360,7 @@ final class AppModel: ObservableObject {
         editingApp.map { AppKeymaps.merge(bindings, appBindings[$0]) } ?? bindings
     }
 
-    /// 編集中のアプリで、共通の割り当てを上書きしている項目か
+    /// 編集中のアプリで、既定の割り当てを上書きしている項目か
     func isOverridden(_ id: String) -> Bool {
         editingApp.flatMap { appBindings[$0]?[id] } != nil
     }
@@ -377,7 +377,7 @@ final class AppModel: ObservableObject {
         save(edited)
     }
 
-    /// 編集中のアプリの項目を、共通の割り当てに戻す
+    /// 編集中のアプリの項目を、既定の割り当てに戻す
     func useGlobalBinding(_ id: String) {
         guard let app = editingApp, var overrides = appBindings[app] else { return }
         overrides[id] = nil
@@ -433,7 +433,7 @@ final class AppModel: ObservableObject {
         return profile.standardActionName(of: button).map { String(localized: "標準(\($0))") } ?? String(localized: "標準")
     }
 
-    /// 共通の割り当てを初期設定に戻す。アプリの編集中は、そのアプリの上書きをすべて消す
+    /// 既定の割り当てを初期設定に戻す。アプリの編集中は、そのアプリの上書きをすべて消す
     func restoreDefaultBindings() {
         if let app = editingApp {
             saveApp(app, [:])

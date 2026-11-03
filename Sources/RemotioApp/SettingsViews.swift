@@ -344,7 +344,7 @@ struct ButtonsPage: View {
             Button("キーを入力…") { startRecording(id) }
             Divider()
             if model.isOverridden(id) {
-                Button("共通の設定に戻す") {
+                Button("既定に戻す") {
                     model.useGlobalBinding(id)
                     clearSelection()
                 }
@@ -368,7 +368,7 @@ struct ButtonsPage: View {
                 }
             }
         } label: {
-            Text(binding.map(KeyCombo.displayText) ?? unassigned)
+            Text(menuTitle(id: id, binding: binding, unassigned: unassigned))
                 .font(.body.weight(.medium))
                 .lineLimit(1)
         }
@@ -376,13 +376,19 @@ struct ButtonsPage: View {
         .fixedSize()
         .padding(.horizontal, 8)
         .padding(.vertical, 3)
-        // アプリの編集中に、共通の設定を上書きしている項目は色を付ける
+        // アプリの編集中に、既定の割り当てを上書きしている項目は色を付ける
         .background(model.isOverridden(id) ? Color.accentColor.opacity(0.25) : Color.primary.opacity(0.07),
                     in: RoundedRectangle(cornerRadius: 6))
         .overlay(RoundedRectangle(cornerRadius: 6)
             .strokeBorder(model.isOverridden(id) ? Color.accentColor : Color.clear))
         .accessibilityLabel("\(title) の操作")
         .accessibilityValue(binding ?? unassigned)
+    }
+
+    /// メニューに出す名前。アプリの編集中は、上書きしていない項目を「既定」と出す
+    private func menuTitle(id: String, binding: String?, unassigned: String) -> String {
+        if model.editingApp != nil && !model.isOverridden(id) { return String(localized: "既定") }
+        return binding.map(KeyCombo.displayText) ?? unassigned
     }
 
     /// 長押しと2回押しの設定を開くボタン。設定済みなら塗りつぶしのアイコンにする
@@ -496,7 +502,7 @@ struct ButtonsPage: View {
                     Text("「\(name)」に割り当てるキーを押してください。修飾キーだけ(Fn、右 ⌥ など)も押して離すと設定できます。待ち受け中のキー入力は他のアプリへ送りません。")
                         .font(.callout)
                 } else if let app = model.editingApp {
-                    Text("「\(AppInfo.name(of: app))」が前面にあるときだけ使う割り当てです。色の付いた項目は共通の設定を上書きしています。メニューの「共通の設定に戻す」で戻せます。")
+                    Text("「\(AppInfo.name(of: app))」が前面にあるときだけ使う割り当てです。「既定」の項目は既定の割り当てに従います。色の付いた項目はこのアプリだけの割り当てで、メニューの「既定に戻す」で戻せます。")
                         .font(.callout).foregroundStyle(.secondary)
                 } else {
                     Text("各ボタンのメニューから操作を選びます。「標準」は Mac の標準動作をそのまま通し、「無効」は何もしません。この画面を操作している間は、リモコンから割り当てたキーを送りません。")
@@ -504,7 +510,7 @@ struct ButtonsPage: View {
                 }
                 Spacer()
                 if recording != nil { Button("キャンセル", action: clearSelection) }
-                Button(model.editingApp == nil ? String(localized: "初期設定に戻す") : String(localized: "上書きをすべて消す")) {
+                Button(model.editingApp == nil ? String(localized: "初期設定に戻す") : String(localized: "すべて既定に戻す")) {
                     clearSelection()
                     model.restoreDefaultBindings()
                 }
@@ -512,7 +518,7 @@ struct ButtonsPage: View {
         }
     }
 
-    /// 編集する対象(共通か、個別の割り当てを持つアプリ)を選ぶ
+    /// 編集する対象(既定か、個別の割り当てを持つアプリ)を選ぶ
     private var targetMenu: some View {
         let apps = model.appBindings.keys.sorted { AppInfo.name(of: $0) < AppInfo.name(of: $1) }
         let addable = NSWorkspace.shared.runningApplications
@@ -520,7 +526,7 @@ struct ButtonsPage: View {
             .compactMap(\.bundleIdentifier)
             .filter { $0 != Bundle.main.bundleIdentifier && model.appBindings[$0] == nil }
         return Menu {
-            Button("共通(すべてのアプリ)") { selectTarget(nil) }
+            Button("既定") { selectTarget(nil) }
             if !apps.isEmpty {
                 Divider()
                 ForEach(apps, id: \.self) { app in
@@ -549,7 +555,7 @@ struct ButtonsPage: View {
                 } else {
                     Image(systemName: "square.grid.2x2")
                 }
-                Text(model.editingApp.map(AppInfo.name(of:)) ?? String(localized: "共通(すべてのアプリ)"))
+                Text(model.editingApp.map(AppInfo.name(of:)) ?? String(localized: "既定"))
             }
         }
         .fixedSize()
