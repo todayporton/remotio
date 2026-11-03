@@ -145,8 +145,9 @@ final class RemoteCoreTests: XCTestCase {
     }
 
     func testInjectedEventOrder() throws {
-        let ctrl = CGEventFlags.maskControl.rawValue
-        let cmd = CGEventFlags.maskCommand.rawValue
+        // 修飾キーのフラグには、実際のキーボードと同じく左右を示すフラグも付く
+        let ctrl = CGEventFlags.maskControl.rawValue | 0x1
+        let cmd = CGEventFlags.maskCommand.rawValue | 0x8
         let ctrlT = try KeyCombo("ctrl+t")
         XCTAssertEqual(KeyAction(combo: ctrlT, isDown: true).events, [
             InjectedKeyEvent(kind: .flagsChanged, keyCode: 59, flags: ctrl),
@@ -167,7 +168,7 @@ final class RemoteCoreTests: XCTestCase {
 
         // 矢印キーには実際のキーボードと同じフラグを付ける。修飾キーのイベントには付けない
         let arrowFlags = CGEventFlags.maskSecondaryFn.rawValue | CGEventFlags.maskNumericPad.rawValue
-        let opt = CGEventFlags.maskAlternate.rawValue
+        let opt = CGEventFlags.maskAlternate.rawValue | 0x20
         XCTAssertEqual(KeyAction(combo: try KeyCombo("ctrl+opt+left"), isDown: true).events, [
             InjectedKeyEvent(kind: .flagsChanged, keyCode: 59, flags: ctrl),
             InjectedKeyEvent(kind: .flagsChanged, keyCode: 58, flags: ctrl | opt),
@@ -346,7 +347,7 @@ final class RemoteCoreTests: XCTestCase {
     func testDictationTriggerTapsTheModifierTwiceOnPressAndRelease() throws {
         let combo = try KeyCombo("dictation:ctrl")
         XCTAssertTrue(combo.isDoubleTap)
-        let ctrl = CGEventFlags.maskControl.rawValue
+        let ctrl = CGEventFlags.maskControl.rawValue | 0x1
         let expected = [
             InjectedKeyEvent(kind: .flagsChanged, keyCode: 59, flags: ctrl),
             InjectedKeyEvent(kind: .flagsChanged, keyCode: 59, flags: 0),
@@ -358,6 +359,11 @@ final class RemoteCoreTests: XCTestCase {
 
         XCTAssertEqual(try KeyCombo("dictation:fn").keyCode, 63)
         XCTAssertEqual(try KeyCombo("dictation:rcmd").keyCode, 54)
+        // 左右の Command は、左右を示すフラグで区別する
+        XCTAssertEqual(KeyAction(combo: try KeyCombo("dictation:rcmd"), isDown: true).events.first?.flags,
+                       CGEventFlags.maskCommand.rawValue | 0x10)
+        XCTAssertEqual(KeyAction(combo: try KeyCombo("dictation:lcmd"), isDown: true).events.first?.flags,
+                       CGEventFlags.maskCommand.rawValue | 0x8)
         XCTAssertEqual(try KeyCombo("dictation:lcmd").keyCode, 55)
         XCTAssertThrowsError(try KeyCombo("dictation:shift"))
         XCTAssertEqual(KeyCombo.displayText("dictation:ctrl"), "音声入力(Control キーを2回押す)")

@@ -168,6 +168,22 @@ public struct KeyCombo: Equatable, Sendable {
         self.isDoubleTap = isDoubleTap
     }
 
+    /// 左右どちらの修飾キーかを示すフラグ(IOKit の NX_DEVICE*KEYMASK)。実際のキーボードは常に付ける。
+    /// 「右 Command キーを2回押す」のように左右を区別するショートカットの判定に使われる。
+    static func sideFlag(for keyCode: CGKeyCode) -> UInt64 {
+        switch keyCode {
+        case 59: return 0x0000_0001  // 左 Control
+        case 56: return 0x0000_0002  // 左 Shift
+        case 60: return 0x0000_0004  // 右 Shift
+        case 55: return 0x0000_0008  // 左 Command
+        case 54: return 0x0000_0010  // 右 Command
+        case 58: return 0x0000_0020  // 左 Option
+        case 61: return 0x0000_0040  // 右 Option
+        case 62: return 0x0000_2000  // 右 Control
+        default: return 0
+        }
+    }
+
     /// 実際のキーボードがそのキーに付けるフラグ。矢印キーには Fn とテンキー、
     /// ファンクションキーとナビゲーションキーには Fn が付く。ショートカットの判定に使うアプリがある。
     static func hardwareFlags(for keyCode: CGKeyCode) -> UInt64 {
@@ -348,12 +364,14 @@ public extension KeyAction {
     var events: [InjectedKeyEvent] {
         if combo.mediaKey != nil { return [] }
         if combo.isDoubleTap, let flag = combo.modifierOnlyFlag {
-            let tap = [InjectedKeyEvent(kind: .flagsChanged, keyCode: combo.keyCode, flags: flag),
+            let down = flag | KeyCombo.sideFlag(for: combo.keyCode)
+            let tap = [InjectedKeyEvent(kind: .flagsChanged, keyCode: combo.keyCode, flags: down),
                        InjectedKeyEvent(kind: .flagsChanged, keyCode: combo.keyCode, flags: 0)]
             return tap + tap
         }
         if let flag = combo.modifierOnlyFlag {
-            return [InjectedKeyEvent(kind: .flagsChanged, keyCode: combo.keyCode, flags: isDown ? flag : 0)]
+            let down = flag | KeyCombo.sideFlag(for: combo.keyCode)
+            return [InjectedKeyEvent(kind: .flagsChanged, keyCode: combo.keyCode, flags: isDown ? down : 0)]
         }
         // 順に押した状態を積み上げる
         var held: UInt64 = 0
@@ -361,7 +379,7 @@ public extension KeyAction {
         var modifierUps: [InjectedKeyEvent] = []
         for (flag, keyCode) in KeyCombo.modifierKeyCodes where combo.flags & flag.rawValue != 0 {
             let before = held
-            held |= flag.rawValue
+            held |= flag.rawValue | KeyCombo.sideFlag(for: keyCode)
             modifierDowns.append(InjectedKeyEvent(kind: .flagsChanged, keyCode: keyCode, flags: held))
             modifierUps.insert(InjectedKeyEvent(kind: .flagsChanged, keyCode: keyCode, flags: before), at: 0)
         }
