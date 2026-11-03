@@ -3,34 +3,32 @@ import RemoteCore
 import SwiftUI
 
 final class AppDelegate: NSObject, NSApplicationDelegate {
-    var model: AppModel?
+    let model = AppModel()
 
-    func applicationWillTerminate(_ notification: Notification) { model?.shutdown() }
+    func applicationDidFinishLaunching(_ notification: Notification) { model.start() }
+    func applicationWillTerminate(_ notification: Notification) { model.shutdown() }
     func applicationShouldTerminateAfterLastWindowClosed(_ sender: NSApplication) -> Bool { false }
 }
 
 @main
 struct RemotioApp: App {
     @NSApplicationDelegateAdaptor(AppDelegate.self) private var delegate
-    @StateObject private var model = AppModel()
 
     var body: some Scene {
         MenuBarExtra {
-            MenuContent(model: model)
-                .onAppear { delegate.model = model }
+            MenuContent(model: delegate.model)
         } label: {
-            MenuBarLabel(model: model, delegate: delegate)
+            MenuBarLabel(model: delegate.model)
         }
         .menuBarExtraStyle(.window)
 
         Window("Remotio", id: "settings") {
-            SettingsView(model: model)
-                .onAppear { delegate.model = model }
+            SettingsView(model: delegate.model)
         }
         .windowResizability(.contentMinSize)
 
         Window("Remotio のセットアップ", id: "setup") {
-            SetupView(model: model)
+            SetupView(model: delegate.model)
         }
         .windowResizability(.contentSize)
     }
@@ -39,7 +37,6 @@ struct RemotioApp: App {
 /// メニューバーのアイコン。アプリの起動時に必ず表示されるので、起動時の処理もここで行う。
 struct MenuBarLabel: View {
     @ObservedObject var model: AppModel
-    let delegate: AppDelegate
     @Environment(\.openWindow) private var openWindow
 
     var body: some View {
@@ -47,7 +44,6 @@ struct MenuBarLabel: View {
             symbolName: model.micOn ? "mic.fill" : (model.connected ? "appletvremote.gen4" : "appletvremote.gen4.fill")
         ))
         .onAppear {
-            delegate.model = model
             // シーンの構築が終わってから開く
             DispatchQueue.main.async {
                 if model.shouldOpenSetup { openWindow(id: "setup") }

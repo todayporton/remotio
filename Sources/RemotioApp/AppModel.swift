@@ -68,8 +68,6 @@ final class AppModel: ObservableObject {
         refreshDevices()
         refreshPermissions()
         rebuildMapping()
-        // SwiftUI がシーンを作っている最中に状態を変えないよう、次の周回で始める
-        DispatchQueue.main.async { [weak self] in self?.start() }
     }
 
     private func log(_ message: String) {
@@ -79,7 +77,9 @@ final class AppModel: ObservableObject {
         if logs.count > 300 { logs.removeFirst(logs.count - 300) }
     }
 
-    private func start() {
+    /// リモコンとの接続を始める。接続時に別プロセスの終了を待つ処理があり、起動処理の途中で走ると
+    /// applicationDidFinishLaunching が呼ばれなくなるので、起動完了の後に呼ぶ。
+    func start() {
         do {
             let session = try VoiceSession(profile: profile)
             session.onLog = { [weak self] in self?.log($0) }
