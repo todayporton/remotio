@@ -535,4 +535,22 @@ final class RemoteCoreTests: XCTestCase {
         XCTAssertEqual(repeatEvents, [InjectedKeyEvent(kind: .keyDown, keyCode: 17,
                                                        flags: CGEventFlags.maskControl.rawValue | 0x1)])
     }
+
+    func testCommandsKeepTheirTextAndDoNotSendKeys() throws {
+        let url = try KeyCombo("url:raycast://extensions/raycast/Clipboard-History")
+        XCTAssertEqual(url.command, .openURL(URL(string: "raycast://extensions/raycast/Clipboard-History")!))
+        XCTAssertEqual(url.text, "url:raycast://extensions/raycast/Clipboard-History")
+        XCTAssertEqual(KeyAction(combo: url, isDown: true).events, [])
+        XCTAssertFalse(url.repeatsWhileHeld)
+
+        let shell = try KeyCombo("shell:open -a Safari")
+        XCTAssertEqual(shell.command, .shell("open -a Safari"))
+        XCTAssertEqual(KeyCombo.displayText("shell:open -a Safari"), "$ open -a Safari")
+        XCTAssertTrue(KeyCombo.displayText("url:https://example.com/a/very/long/path").hasPrefix("🔗 https://example.com"))
+
+        // 中身のないものや、スキームのない URL は受け付けない
+        XCTAssertThrowsError(try KeyCombo("shell:  "))
+        XCTAssertThrowsError(try KeyCombo("url:not a url"))
+        XCTAssertNoThrow(try KeyMap(["tv": "shell:say hi", "tv.long": "url:https://example.com"]))
+    }
 }

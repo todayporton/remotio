@@ -260,6 +260,8 @@ struct ButtonsPage: View {
     @State private var frames: [String: CGRect] = [:]
     /// 長押しと2回押しの設定を開いているボタン
     @State private var editingGestures: String?
+    /// 入力中のコマンド(URL かシェルコマンド)
+    @State private var commandEdit: CommandEdit?
 
     var body: some View {
         VStack(alignment: .leading, spacing: 14) {
@@ -283,6 +285,14 @@ struct ButtonsPage: View {
         .contentShape(Rectangle())
         .onTapGesture(perform: clearSelection)
         .onDisappear(perform: stopRecording)
+        .sheet(item: $commandEdit) { edit in
+            CommandEditor(edit: edit) { text in
+                assign(edit.id, text)
+                commandEdit = nil
+            } cancel: {
+                commandEdit = nil
+            }
+        }
     }
 
     private var map: some View {
@@ -367,6 +377,9 @@ struct ButtonsPage: View {
                     Button(item.title) { assign(id, item.id) }
                 }
             }
+            Divider()
+            Button("URL を開く…") { editCommand(id: id, title: title, kind: .url, current: binding) }
+            Button("シェルコマンドを実行…") { editCommand(id: id, title: title, kind: .shell, current: binding) }
         } label: {
             Text(menuTitle(id: id, binding: binding, unassigned: unassigned))
                 .font(.body.weight(.medium))
@@ -383,6 +396,17 @@ struct ButtonsPage: View {
             .strokeBorder(model.isOverridden(id) ? Color.accentColor : Color.clear))
         .accessibilityLabel("\(title) の操作")
         .accessibilityValue(binding ?? unassigned)
+    }
+
+    private func editCommand(id: String, title: String, kind: CommandEdit.Kind, current: String?) {
+        // 同じ種類のコマンドが割り当て済みなら、その中身から編集を始める
+        var text = ""
+        switch current.flatMap(ButtonCommand.init) {
+        case .openURL(let url) where kind == .url: text = url.absoluteString
+        case .shell(let command) where kind == .shell: text = command
+        default: break
+        }
+        commandEdit = CommandEdit(id: id, title: title, kind: kind, text: text)
     }
 
     /// メニューに出す名前。アプリの編集中は、上書きしていない項目を「既定」と出す
@@ -892,5 +916,53 @@ enum AppInfo {
         let icon = NSWorkspace.shared.icon(forFile: url.path)
         icon.size = NSSize(width: 16, height: 16)
         return icon
+    }
+}
+
+/// コマンドの入力中の状態
+struct CommandEdit: Identifiable {
+    enum Kind { case url, shell }
+    let id: String
+    let title: String
+    let kind: Kind
+    var text: String
+}
+
+/// URL かシェルコマンドを入力するシート
+struct CommandEditor: View {
+    @State var edit: CommandEdit
+    let save: (String) -> Void
+    let cancel: () -> Void
+
+    private var command: ButtonCommand? {
+        let value = edit.text.trimmingCharacters(in: .whitespacesAndNewlines)
+        return ButtonCommand((edit.kind == .url ? "url:" : "shell:") + value)
+    }
+
+    var body: some View {
+        VStack(alignment: .leading, spacing: 12) {
+            Text(edit.kind == .url ? "「\(edit.title)」で開く URL" : "「\(edit.title)」で実行するシェルコマンド")
+                .font(.headline)
+            TextField(edit.kind == .url ? "raycast://extensions/… や https://…" : "open -a Safari",
+                      text: $edit.text, axis: .vertical)
+                .textFieldStyle(.roundedBorder)
+                .font(.body.monospaced())
+                .lineLimit(1...4)
+                .frame(width: 440)
+            Text(edit.kind == .url
+                 ? "ボタンを押したときに、この URL を開きます。Raycast などのアプリの URL も使えます。"
+                 : "ボタンを押したときに、ログインシェル(zsh)で実行します。あなたの権限で実行されるので、内容を確認してから設定してください。失敗したときはログに出ます。")
+                .font(.caption).foregroundStyle(.secondary)
+                .fixedSize(horizontal: false, vertical: true)
+            HStack {
+                Spacer()
+                Button("キャンセル", action: cancel).keyboardShortcut(.cancelAction)
+                Button("保存") { command.map { save($0.text) } }
+                    .keyboardShortcut(.defaultAction)
+                    .disabled(command == nil)
+            }
+        }
+        .padding(20)
+        .frame(width: 480)
     }
 }

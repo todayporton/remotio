@@ -75,6 +75,8 @@ public struct KeyCombo: Equatable, Sendable {
     public let modifierOnlyFlag: UInt64?
     /// 修飾キーを2回押す操作か(macOS の音声入力の開始と終了)。押したときと離したときの両方で2回押す
     public let isDoubleTap: Bool
+    /// キーの代わりに実行するコマンド(URL を開く、シェルコマンドを実行する)
+    public let command: ButtonCommand?
 
     static let modifierOnlyKeys: [String: (code: CGKeyCode, flag: CGEventFlags)] = [
         "cmd": (55, .maskCommand), "rcmd": (54, .maskCommand),
@@ -115,6 +117,12 @@ public struct KeyCombo: Equatable, Sendable {
     }()
 
     public init(_ text: String) throws {
+        // URL とコマンドは大文字と小文字を区別するので、そのまま持つ
+        if let command = ButtonCommand(text) {
+            self.init(keyCode: 0, flags: 0, text: text, mediaKey: nil, modifierOnlyFlag: nil, command: command)
+            return
+        }
+        if ButtonCommand.hasPrefix(text) { throw KeyMapError.unknownKey(text) }
         let lowered = text.lowercased()
         if lowered.hasPrefix("system:") {
             guard let action = ActionCatalog.systemActions[String(lowered.dropFirst(7))] else {
@@ -159,13 +167,14 @@ public struct KeyCombo: Equatable, Sendable {
     }
 
     private init(keyCode: CGKeyCode, flags: UInt64, text: String, mediaKey: Int32?, modifierOnlyFlag: UInt64?,
-                 isDoubleTap: Bool = false) {
+                 isDoubleTap: Bool = false, command: ButtonCommand? = nil) {
         self.keyCode = keyCode
         self.flags = flags
         self.text = text
         self.mediaKey = mediaKey
         self.modifierOnlyFlag = modifierOnlyFlag
         self.isDoubleTap = isDoubleTap
+        self.command = command
     }
 
     /// 左右どちらの修飾キーかを示すフラグ(IOKit の NX_DEVICE*KEYMASK)。実際のキーボードは常に付ける。
@@ -222,6 +231,7 @@ public struct KeyCombo: Equatable, Sendable {
 
     /// 画面表示用の文字列(例: cmd+shift+p → ⌘⇧P)
     public static func displayText(_ text: String) -> String {
+        if let command = ButtonCommand(text) { return command.displayText }
         let lowered = text.lowercased()
         if lowered == ActionCatalog.disabled { return String(localized: "無効") }
         if lowered.hasPrefix("media:"), let item = ActionCatalog.mediaKeys[String(lowered.dropFirst(6))] {
@@ -336,7 +346,7 @@ public struct KeyAction: Equatable, Sendable {
 
 public extension KeyCombo {
     /// 押し続けたときに繰り返すか。修飾キーだけのものと、音声入力の2回押しは繰り返さない
-    var repeatsWhileHeld: Bool { modifierOnlyFlag == nil && !isDoubleTap }
+    var repeatsWhileHeld: Bool { modifierOnlyFlag == nil && !isDoubleTap && command == nil }
 }
 
 /// ボタンイベントをキー操作へ変換する。押しっぱなしのまま残らないよう押下中のキーを覚える。
@@ -460,7 +470,7 @@ public extension KeyAction {
     /// キーの状態を flagsChanged で追跡するアプリがあるため、修飾キーも個別のイベントとして送る。
     /// 例: ctrl+t の押下は ctrl(flagsChanged) → t(keyDown)、解放は t(keyUp) → ctrl(flagsChanged)。
     var events: [InjectedKeyEvent] {
-        if combo.mediaKey != nil { return [] }
+        if combo.mediaKey != nil || combo.command != nil { return [] }
         if isRepeat {
             // 繰り返しは通常キーの押下だけ。修飾キーは押したまま
             var held: UInt64 = 0

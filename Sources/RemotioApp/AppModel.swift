@@ -155,6 +155,11 @@ final class AppModel: ObservableObject {
     private func post(_ action: KeyAction) {
         // 設定画面を操作している間は送らない。解放は押しっぱなしを防ぐために常に送る
         if action.isDown && isSettingsWindowActive { return }
+        // コマンドは押したときに1回だけ実行する。アクセシビリティの権限は要らない
+        if let command = action.combo.command {
+            if action.isDown { command.run { [weak self] in self?.log($0) } }
+            return
+        }
         guard KeyInjector.isTrusted else {
             if action.isDown { log(String(localized: "アクセシビリティの権限がないためキーを送信しません")) }
             return
