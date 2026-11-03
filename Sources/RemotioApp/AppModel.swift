@@ -121,9 +121,10 @@ final class AppModel: ObservableObject {
         router?.process(event)
     }
 
-    /// 設定画面を操作している間か
+    /// 設定画面かセットアップの案内を操作している間か
     private var isSettingsWindowActive: Bool {
-        NSApp.isActive && NSApp.keyWindow?.identifier?.rawValue == "settings"
+        guard NSApp.isActive, let id = NSApp.keyWindow?.identifier?.rawValue else { return false }
+        return id == "settings" || id == "setup"
     }
 
     private func post(_ action: KeyAction) {
@@ -219,6 +220,41 @@ final class AppModel: ObservableObject {
         DispatchQueue.main.asyncAfter(deadline: .now() + 0.5) { [weak self] in
             self?.waitForAudioSystem(attemptsLeft: attemptsLeft - 1)
         }
+    }
+
+    var setupProgress: SetupProgress {
+        SetupProgress(inputMonitoringGranted: inputMonitoringGranted,
+                      accessibilityGranted: accessibilityGranted,
+                      remoteConnected: connected,
+                      microphoneReady: driverDeviceAvailable || useCustomOutput)
+    }
+
+    /// 案内を自動で開くか
+    var shouldOpenSetup: Bool {
+        setupProgress.shouldOpenAutomatically(dismissed: UserDefaults.standard.bool(forKey: "setupDismissed"))
+    }
+
+    /// 「完了」や「後で設定する」を選んだら、次回から自動で開かない
+    func dismissSetup() { UserDefaults.standard.set(true, forKey: "setupDismissed") }
+
+    /// 起動後に許可した入力監視は、開き直すまで反映されない
+    var needsRelaunch: Bool { startError != nil }
+
+    func relaunch() {
+        let process = Process()
+        process.executableURL = URL(fileURLWithPath: "/bin/sh")
+        process.arguments = ["-c", "sleep 1; /usr/bin/open \"$0\"", Bundle.main.bundlePath]
+        do {
+            try process.run()
+            NSApp.terminate(nil)
+        } catch {
+            log("アプリを開き直せません: \(error)")
+        }
+    }
+
+    func openBluetoothSettings() {
+        guard let url = URL(string: "x-apple.systempreferences:com.apple.BluetoothSettings") else { return }
+        NSWorkspace.shared.open(url)
     }
 
     func refreshPermissions() {

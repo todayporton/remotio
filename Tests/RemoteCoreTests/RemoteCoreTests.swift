@@ -317,4 +317,29 @@ final class RemoteCoreTests: XCTestCase {
         XCTAssertEqual(meter.position, 0)
         XCTAssertFalse(meter.clipping)
     }
+
+    func testSetupProgressFollowsTheOrderOfSteps() {
+        var progress = SetupProgress(inputMonitoringGranted: false, accessibilityGranted: false,
+                                     remoteConnected: false, microphoneReady: false)
+        XCTAssertEqual(progress.currentStep, .inputMonitoring)
+        progress.inputMonitoringGranted = true
+        XCTAssertEqual(progress.currentStep, .accessibility)
+        progress.accessibilityGranted = true
+        XCTAssertEqual(progress.currentStep, .pairing)
+        progress.remoteConnected = true
+        XCTAssertEqual(progress.currentStep, .microphone)
+        progress.microphoneReady = true
+        XCTAssertNil(progress.currentStep)
+    }
+
+    func testSetupOpensAutomaticallyOnlyWhenNeeded() {
+        let missing = SetupProgress(inputMonitoringGranted: true, accessibilityGranted: false,
+                                    remoteConnected: true, microphoneReady: true)
+        XCTAssertTrue(missing.shouldOpenAutomatically(dismissed: false))
+        XCTAssertFalse(missing.shouldOpenAutomatically(dismissed: true))
+        // スリープ中のリモコンは未接続に見えるので、それだけでは開かない
+        let sleeping = SetupProgress(inputMonitoringGranted: true, accessibilityGranted: true,
+                                     remoteConnected: false, microphoneReady: true)
+        XCTAssertFalse(sleeping.shouldOpenAutomatically(dismissed: false))
+    }
 }
