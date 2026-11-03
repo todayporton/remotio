@@ -68,7 +68,8 @@ final class AppModel: ObservableObject {
         refreshDevices()
         refreshPermissions()
         rebuildMapping()
-        start()
+        // SwiftUI がシーンを作っている最中に状態を変えないよう、次の周回で始める
+        DispatchQueue.main.async { [weak self] in self?.start() }
     }
 
     private func log(_ message: String) {
