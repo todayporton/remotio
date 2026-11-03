@@ -28,6 +28,10 @@ cat > "$APP/Contents/Info.plist" <<'P'
 <key>CFBundleExecutable</key><string>Remotio</string>
 <key>CFBundleName</key><string>Remotio</string>
 <key>CFBundleIconFile</key><string>AppIcon</string>
+<key>CFBundleURLTypes</key><array><dict>
+<key>CFBundleURLName</key><string>online.todayporton.remotio</string>
+<key>CFBundleURLSchemes</key><array><string>remotio</string></array>
+</dict></array>
 <key>CFBundleDevelopmentRegion</key><string>en</string>
 <key>CFBundleLocalizations</key><array><string>en</string><string>ja</string></array>
 <key>CFBundlePackageType</key><string>APPL</string>

@@ -22,6 +22,14 @@ macOS の音声入力を使う場合は、システム設定 > キーボード >
 
 リモコンは、システム設定の Bluetooth でペアリングします。Fire TV とのペアリングは解除される場合があります。
 
+設定画面とセットアップの案内は、コマンドでも開けます。
+
+```bash
+open "remotio://settings"              # 設定画面
+open "remotio://settings/connection"   # ページを指定する(connection、buttons、permissions、logs)
+open "remotio://setup"                 # セットアップの案内
+```
+
 ### アンインストール
 
 「接続と音声」で仮想マイクの「アンインストール」を押してから、アプリを削除します。

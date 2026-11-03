@@ -43,6 +43,8 @@ final class AppModel: ObservableObject {
         didSet { UserDefaults.standard.set(micGainDecibels, forKey: "micGainDecibels") }
     }
     let micMeter = MicLevelMeter()
+    /// URL で求められたウインドウ。開いたページは設定画面が受け取る
+    @Published var windowRequest: WindowRequest?
 
     private let profile = FireTVRemoteProfile()
     private var session: VoiceSession?
@@ -326,5 +328,27 @@ final class AppModel: ObservableObject {
         session?.shutdown()
         if connected, let suppressor, !suppressor.clear() { log(String(localized: "元のキー入力の設定を戻せませんでした")) }
         output?.stop()
+    }
+}
+
+/// remotio://settings/<ページ> と remotio://setup の求め
+struct WindowRequest: Equatable {
+    let id = UUID()
+    let windowID: String
+    let page: SettingsPage?
+
+    init?(url: URL) {
+        guard url.scheme?.lowercased() == "remotio" else { return nil }
+        switch url.host?.lowercased() {
+        case "settings":
+            windowID = "settings"
+            let name = url.pathComponents.dropFirst().first?.lowercased()
+            page = name.flatMap(SettingsPage.init(rawValue:))
+        case "setup":
+            windowID = "setup"
+            page = nil
+        default:
+            return nil
+        }
     }
 }

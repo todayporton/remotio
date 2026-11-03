@@ -8,6 +8,11 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
     func applicationDidFinishLaunching(_ notification: Notification) { model.start() }
     func applicationWillTerminate(_ notification: Notification) { model.shutdown() }
     func applicationShouldTerminateAfterLastWindowClosed(_ sender: NSApplication) -> Bool { false }
+
+    /// remotio://settings/buttons のような URL で、設定画面の各ページやセットアップの案内を開く
+    func application(_ application: NSApplication, open urls: [URL]) {
+        urls.compactMap(WindowRequest.init(url:)).last.map { model.windowRequest = $0 }
+    }
 }
 
 @main
@@ -48,6 +53,11 @@ struct MenuBarLabel: View {
             DispatchQueue.main.async {
                 if model.shouldOpenSetup { openWindow(id: "setup") }
             }
+        }
+        // URL で開くよう求められたウインドウを開く。このアイコンは常に表示されているので、ここで受け取る
+        .onReceive(model.$windowRequest.compactMap { $0 }) { request in
+            openWindow(id: request.windowID)
+            NSApp.activate(ignoringOtherApps: true)
         }
     }
 }

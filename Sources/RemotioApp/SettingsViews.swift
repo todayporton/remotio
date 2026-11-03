@@ -68,8 +68,9 @@ struct SettingsView: View {
 
     init(model: AppModel) {
         self.model = model
-        // 仮想マイクが未導入なら、インストールのボタンがある画面から始める
-        _page = State(initialValue: model.driverDeviceAvailable || model.useCustomOutput ? .buttons : .connection)
+        // URL でページの指定があればそのページ、なければ仮想マイクが未導入ならインストールのボタンがある画面から始める
+        let fallback: SettingsPage = model.driverDeviceAvailable || model.useCustomOutput ? .buttons : .connection
+        _page = State(initialValue: model.windowRequest?.page ?? fallback)
     }
 
     var body: some View {
@@ -119,6 +120,7 @@ struct SettingsView: View {
                 NSApp.windows.first { $0.identifier?.rawValue == "settings" }?.center()
             }
         }
+        .onReceive(model.$windowRequest.compactMap { $0?.page }) { page = $0 }
         .onReceive(NotificationCenter.default.publisher(for: NSApplication.didBecomeActiveNotification)) { _ in
             model.refreshPermissions()
             model.refreshDevices()
