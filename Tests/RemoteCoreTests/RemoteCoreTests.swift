@@ -546,7 +546,7 @@ final class RemoteCoreTests: XCTestCase {
         let shell = try KeyCombo("shell:open -a Safari")
         XCTAssertEqual(shell.command, .shell("open -a Safari"))
         XCTAssertEqual(KeyCombo.displayText("shell:open -a Safari"), "$ open -a Safari")
-        XCTAssertTrue(KeyCombo.displayText("url:https://example.com/a/very/long/path").hasPrefix("🔗 https://example.com"))
+        XCTAssertEqual(KeyCombo.displayText("url:https://example.com/a/very/long/path"), "🔗 https://example…")
 
         // 中身のないものや、スキームのない URL は受け付けない
         XCTAssertThrowsError(try KeyCombo("shell:  "))

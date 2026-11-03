@@ -48,7 +48,7 @@ public enum ButtonCommand: Equatable, Sendable {
 
     /// メニューに出す名前。長いものは省略する
     public var displayText: String {
-        let short = value.count > 24 ? String(value.prefix(23)) + "…" : value
+        let short = value.count > 16 ? String(value.prefix(15)) + "…" : value
         switch self {
         case .openURL: return "🔗 " + short
         case .shell: return "$ " + short
