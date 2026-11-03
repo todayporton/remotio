@@ -3,7 +3,7 @@
 set -euo pipefail
 cd "$(dirname "$0")/.."
 scripts/build-app.sh
-IDENTITY="${CODESIGN_IDENTITY:-Remotio}"
+IDENTITY="${CODESIGN_IDENTITY:-todayporton}"
 STAGE="$(mktemp -d)"
 trap '/bin/rm -rf "$STAGE"' EXIT
 cp -R build/Remotio.app "$STAGE/"

@@ -4,7 +4,7 @@ set -euo pipefail
 cd "$(dirname "$0")/.."
 OUT=build/RemotioMicrophone.driver
 OBJ=.build/driver-obj
-IDENTITY="${CODESIGN_IDENTITY:-Remotio}"
+IDENTITY="${CODESIGN_IDENTITY:-todayporton}"
 mkdir -p "$OBJ"
 for src in Driver/RemotioMicrophone.cpp Vendor/libASPL/src/*.cpp; do
   obj="$OBJ/$(basename "$src" .cpp).o"

@@ -34,7 +34,7 @@ cat > "$APP/Contents/Info.plist" <<'P'
 </dict></plist>
 P
 # 配布物の署名を変えないよう、証明書は固定する(権限はこの署名に結びつく)
-IDENTITY="${CODESIGN_IDENTITY:-Remotio}"
+IDENTITY="${CODESIGN_IDENTITY:-todayporton}"
 echo "署名: $IDENTITY"
 codesign --force --sign "$IDENTITY" "$APP/Contents/Frameworks/libopus.0.dylib"
 codesign --force --sign "$IDENTITY" "$APP"
