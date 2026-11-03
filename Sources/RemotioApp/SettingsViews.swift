@@ -368,7 +368,6 @@ struct ButtonsPage: View {
 
     private var map: some View {
         ZStack {
-            leaderLines.allowsHitTesting(false)
             HStack(alignment: .top, spacing: 40) {
                 column(RemoteButton.left)
                 RemoteDrawing(pressed: model.pressedButtons, selected: selected ?? recording) { id in
@@ -378,6 +377,8 @@ struct ButtonsPage: View {
                 .padding(.top, 14)
                 column(RemoteButton.right)
             }
+            // リモコン図は暗いので、線は図の上に重ねて描く
+            leaderLines.allowsHitTesting(false)
         }
     }
 
@@ -573,7 +574,8 @@ struct ButtonsPage: View {
                 guard let from = frames["remote:\(button.id)"], let to = frames["card:\(button.id)"] else { continue }
                 let onLeft = to.midX < from.midX
                 let end = CGPoint(x: onLeft ? to.maxX : to.minX, y: to.midY)
-                let start = CGPoint(x: from.midX, y: from.midY)
+                // ボタンの記号に重ならないよう、カードの側の縁から引く
+                let start = CGPoint(x: onLeft ? from.minX : from.maxX, y: from.midY)
                 var path = Path()
                 path.move(to: start)
                 let bend = abs(end.x - start.x) * 0.55
@@ -581,8 +583,11 @@ struct ButtonsPage: View {
                               control1: CGPoint(x: start.x + (onLeft ? -bend : bend), y: start.y),
                               control2: CGPoint(x: end.x + (onLeft ? bend : -bend), y: end.y))
                 let active = selected == button.id || recording == button.id || model.pressedButtons.contains(button.id)
-                context.stroke(path, with: .color(active ? .accentColor : .secondary.opacity(0.35)),
-                               lineWidth: active ? 2 : 1)
+                // 明るい背景と暗いリモコンの両方で見える灰色
+                let color: Color = active ? .accentColor : Color(white: 0.55).opacity(0.7)
+                context.stroke(path, with: .color(color), lineWidth: active ? 2 : 1)
+                context.fill(Path(ellipseIn: CGRect(x: start.x - 2, y: start.y - 2, width: 4, height: 4)),
+                             with: .color(color))
             }
         }
     }
