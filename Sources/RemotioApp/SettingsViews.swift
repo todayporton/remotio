@@ -5,38 +5,66 @@ import SwiftUI
 // MARK: - ボタンの定義
 
 struct RemoteButton: Identifiable {
+    enum Shape: Equatable {
+        case round, arrow, select, voice
+        /// 音量の縦長ボタンの上半分か下半分
+        case volume
+        /// アプリボタン(実機の色と文字の色)
+        case app(fill: Color, label: Color)
+    }
+
     let id: String
     let title: String
     let symbol: String
-    /// リモコン図の中の位置(幅・高さに対する割合)
+    /// リモコン図の中の中心の位置(x は幅、y は高さに対する割合)
     let position: CGPoint
-    let size: CGFloat
+    /// 大きさ(幅も高さもリモコン図の幅に対する割合)
+    let size: CGSize
+    var shape: Shape = .round
+    /// 図に描く記号(一覧と違うときだけ)
+    var glyph: String?
 
+    private static func button(_ id: String, _ title: String, _ symbol: String, _ x: CGFloat, _ y: CGFloat,
+                               size: CGFloat = 0.23, shape: Shape = .round, glyph: String? = nil) -> RemoteButton {
+        RemoteButton(id: id, title: title, symbol: symbol, position: .init(x: x, y: y),
+                     size: .init(width: size, height: size), shape: shape, glyph: glyph)
+    }
+
+    private static func app(_ id: String, _ title: String, _ number: Int, _ x: CGFloat, _ y: CGFloat,
+                            fill: Color, label: Color) -> RemoteButton {
+        RemoteButton(id: id, title: title, symbol: "\(number).circle", position: .init(x: x, y: y),
+                     size: .init(width: 0.37, height: 0.135), shape: .app(fill: fill, label: label), glyph: "\(number)")
+    }
+
+    // 位置と大きさは Fire TV Stick 4K の Alexa 対応音声認識リモコン(第3世代)に合わせている
     static let left: [RemoteButton] = [
-        .init(id: "voice", title: String(localized: "音声(Push-to-Talk)"), symbol: "mic.fill", position: .init(x: 0.5, y: 0.075), size: 26),
-        .init(id: "dpad_up", title: String(localized: "上"), symbol: "chevron.up", position: .init(x: 0.5, y: 0.165), size: 20),
-        .init(id: "dpad_left", title: String(localized: "左"), symbol: "chevron.left", position: .init(x: 0.25, y: 0.235), size: 20),
-        .init(id: "back", title: String(localized: "戻る"), symbol: "arrow.uturn.backward", position: .init(x: 0.22, y: 0.365), size: 26),
-        .init(id: "rewind", title: String(localized: "巻き戻し"), symbol: "backward.fill", position: .init(x: 0.22, y: 0.445), size: 26),
-        .init(id: "volume_up", title: String(localized: "音量 +"), symbol: "speaker.plus", position: .init(x: 0.5, y: 0.53), size: 26),
-        .init(id: "mute", title: String(localized: "ミュート"), symbol: "speaker.slash", position: .init(x: 0.22, y: 0.61), size: 26),
-        .init(id: "app_a1", title: String(localized: "アプリ 1"), symbol: "1.circle", position: .init(x: 0.3, y: 0.73), size: 26),
-        .init(id: "app_a3", title: String(localized: "アプリ 3"), symbol: "3.circle", position: .init(x: 0.3, y: 0.83), size: 26),
+        button("voice", String(localized: "音声(Push-to-Talk)"), "mic.fill", 0.5, 0.108, size: 0.24, shape: .voice),
+        button("dpad_up", String(localized: "上"), "chevron.up", 0.5, 0.18, size: 0.16, shape: .arrow),
+        button("dpad_left", String(localized: "左"), "chevron.left", 0.2, 0.258, size: 0.16, shape: .arrow),
+        button("back", String(localized: "戻る"), "arrow.uturn.backward", 0.19, 0.42),
+        button("rewind", String(localized: "巻き戻し"), "backward.fill", 0.19, 0.49),
+        button("volume_up", String(localized: "音量 +"), "speaker.plus", 0.5, 0.578, shape: .volume, glyph: "plus"),
+        button("mute", String(localized: "ミュート"), "speaker.slash", 0.19, 0.575),
+        app("app_a1", String(localized: "アプリ 1"), 1, 0.29, 0.712, fill: Color(red: 0.12, green: 0.45, blue: 0.75), label: .white),
+        app("app_a3", String(localized: "アプリ 3"), 3, 0.29, 0.772, fill: Color(white: 0.86), label: Color(white: 0.15)),
     ]
     static let right: [RemoteButton] = [
-        .init(id: "select", title: String(localized: "決定"), symbol: "circle.circle", position: .init(x: 0.5, y: 0.235), size: 30),
-        .init(id: "dpad_right", title: String(localized: "右"), symbol: "chevron.right", position: .init(x: 0.75, y: 0.235), size: 20),
-        .init(id: "dpad_down", title: String(localized: "下"), symbol: "chevron.down", position: .init(x: 0.5, y: 0.305), size: 20),
-        .init(id: "home", title: String(localized: "ホーム"), symbol: "house", position: .init(x: 0.5, y: 0.365), size: 26),
-        .init(id: "menu", title: String(localized: "メニュー"), symbol: "line.3.horizontal", position: .init(x: 0.78, y: 0.365), size: 26),
-        .init(id: "play_pause", title: String(localized: "再生・停止"), symbol: "playpause.fill", position: .init(x: 0.5, y: 0.445), size: 26),
-        .init(id: "fast_forward", title: String(localized: "早送り"), symbol: "forward.fill", position: .init(x: 0.78, y: 0.445), size: 26),
-        .init(id: "volume_down", title: String(localized: "音量 −"), symbol: "speaker.minus", position: .init(x: 0.5, y: 0.61), size: 26),
-        .init(id: "tv", title: "TV", symbol: "tv", position: .init(x: 0.78, y: 0.61), size: 26),
-        .init(id: "app_a2", title: String(localized: "アプリ 2"), symbol: "2.circle", position: .init(x: 0.7, y: 0.73), size: 26),
-        .init(id: "app_a4", title: String(localized: "アプリ 4"), symbol: "4.circle", position: .init(x: 0.7, y: 0.83), size: 26),
+        button("select", String(localized: "決定"), "circle.circle", 0.5, 0.258, size: 0.4, shape: .select),
+        button("dpad_right", String(localized: "右"), "chevron.right", 0.8, 0.258, size: 0.16, shape: .arrow),
+        button("dpad_down", String(localized: "下"), "chevron.down", 0.5, 0.336, size: 0.16, shape: .arrow),
+        button("home", String(localized: "ホーム"), "house", 0.5, 0.42),
+        button("menu", String(localized: "メニュー"), "line.3.horizontal", 0.81, 0.42),
+        button("play_pause", String(localized: "再生・停止"), "playpause.fill", 0.5, 0.49),
+        button("fast_forward", String(localized: "早送り"), "forward.fill", 0.81, 0.49),
+        button("volume_down", String(localized: "音量 −"), "speaker.minus", 0.5, 0.645, shape: .volume, glyph: "minus"),
+        button("tv", "TV", "tv", 0.81, 0.575),
+        app("app_a2", String(localized: "アプリ 2"), 2, 0.71, 0.712, fill: .white, label: Color(red: 0.85, green: 0.1, blue: 0.12)),
+        app("app_a4", String(localized: "アプリ 4"), 4, 0.71, 0.772, fill: .white, label: Color(red: 0.1, green: 0.15, blue: 0.3)),
     ]
     static let all = left + right
+
+    /// 図の縦横比(実機に合わせて幅 : 高さ = 1 : 3.9)
+    static let drawingAspect: CGFloat = 1 / 3.9
 }
 
 // MARK: - 全体
@@ -206,45 +234,85 @@ struct RemoteDrawing: View {
     var selected: String?
     var onSelect: ((String) -> Void)?
 
+    private static let voiceBlue = Color(red: 0.1, green: 0.66, blue: 0.9)
+
     var body: some View {
         GeometryReader { geo in
+            let w = geo.size.width, h = geo.size.height
             ZStack {
-                RoundedRectangle(cornerRadius: geo.size.width * 0.3)
-                    .fill(LinearGradient(colors: [Color(white: 0.24), Color(white: 0.1)],
+                // 本体
+                RoundedRectangle(cornerRadius: w * 0.32)
+                    .fill(LinearGradient(colors: [Color(white: 0.17), Color(white: 0.08)],
                                          startPoint: .top, endPoint: .bottom))
+                    .overlay(RoundedRectangle(cornerRadius: w * 0.32).strokeBorder(Color.white.opacity(0.08)))
                     .shadow(color: .black.opacity(0.25), radius: 8, y: 3)
+                // マイクの穴と電源ボタン(電源は Mac に届かないので飾り)
+                Capsule().fill(Color.black).frame(width: w * 0.025, height: w * 0.06)
+                    .position(x: w * 0.5, y: h * 0.038)
+                Circle().fill(Color(white: 0.2))
+                    .overlay(Image(systemName: "power").font(.system(size: w * 0.07, weight: .semibold))
+                        .foregroundStyle(Color(white: 0.75)))
+                    .frame(width: w * 0.15, height: w * 0.15)
+                    .position(x: w * 0.15, y: h * 0.048)
+                // 方向ボタンのリング
                 Circle()
-                    .fill(Color(white: 0.05))
-                    .frame(width: geo.size.width * 0.78)
-                    .position(x: geo.size.width * 0.5, y: geo.size.height * 0.235)
+                    .fill(Color(white: 0.04))
+                    .overlay(Circle().strokeBorder(Color.white.opacity(0.07)))
+                    .frame(width: w * 0.82, height: w * 0.82)
+                    .position(x: w * 0.5, y: h * 0.258)
+                // 音量の縦長ボタン
+                Capsule().fill(Color(white: 0.17))
+                    .overlay(Capsule().strokeBorder(Color.white.opacity(0.08)))
+                    .frame(width: w * 0.24, height: w * 0.5)
+                    .position(x: w * 0.5, y: h * 0.6115)
                 ForEach(RemoteButton.all) { button in
-                    let active = pressed.contains(button.id) || selected == button.id
-                    let isSelect = button.id == "select"
-                    let isDpad = button.id.hasPrefix("dpad")
-                    Button { onSelect?(button.id) } label: {
-                        ZStack {
-                            if !isDpad {
-                                Circle().fill(active ? Color.accentColor : Color(white: isSelect ? 0.22 : 0.16))
-                            }
-                            if !isSelect {
-                                Image(systemName: button.symbol)
-                                    .font(.system(size: button.size * 0.46, weight: .semibold))
-                                    .foregroundStyle(isDpad && active ? Color.accentColor : .white)
-                            }
-                        }
-                        .frame(width: button.size, height: button.size)
-                        .contentShape(Rectangle())
-                    }
-                    .buttonStyle(.plain)
-                    .accessibilityLabel("リモコン \(button.title)")
-                    .background(GeometryReader { g in
-                        Color.clear.preference(key: RemoteFrameKey.self,
-                                               value: ["remote:\(button.id)": g.frame(in: .named(mapSpace))])
-                    })
-                    .position(x: geo.size.width * button.position.x, y: geo.size.height * button.position.y)
+                    key(button, active: pressed.contains(button.id) || selected == button.id, width: w)
+                        .position(x: w * button.position.x, y: h * button.position.y)
                 }
             }
         }
+        .aspectRatio(RemoteButton.drawingAspect, contentMode: .fit)
+    }
+
+    private func key(_ button: RemoteButton, active: Bool, width w: CGFloat) -> some View {
+        let size = CGSize(width: button.size.width * w, height: button.size.height * w)
+        let glyph = Image(systemName: button.glyph ?? button.symbol)
+            .font(.system(size: min(size.width, size.height) * 0.46, weight: .semibold))
+        return Button { onSelect?(button.id) } label: {
+            ZStack {
+                switch button.shape {
+                case .round:
+                    Circle().fill(active ? Color.accentColor : Color(white: 0.17))
+                        .overlay(Circle().strokeBorder(Color.white.opacity(0.08)))
+                    glyph.foregroundStyle(.white)
+                case .voice:
+                    Circle().fill(active ? Color.accentColor : Self.voiceBlue)
+                    glyph.foregroundStyle(.white)
+                case .arrow:
+                    // 実機のリングには印がないので、押したときと選んだときだけ目立たせる
+                    glyph.foregroundStyle(active ? Color.accentColor : Color(white: 0.4))
+                case .select:
+                    Circle().fill(active ? Color.accentColor : Color(white: 0.13))
+                        .overlay(Circle().strokeBorder(Color.white.opacity(0.08)))
+                case .volume:
+                    if active { Circle().fill(Color.accentColor) }
+                    glyph.foregroundStyle(.white)
+                case .app(let fill, let label):
+                    Capsule().fill(active ? Color.accentColor : fill)
+                    Text(button.glyph ?? "")
+                        .font(.system(size: size.height * 0.62, weight: .bold, design: .rounded))
+                        .foregroundStyle(active ? .white : label)
+                }
+            }
+            .frame(width: size.width, height: size.height)
+            .contentShape(Rectangle())
+        }
+        .buttonStyle(.plain)
+        .accessibilityLabel("リモコン \(button.title)")
+        .background(GeometryReader { g in
+            Color.clear.preference(key: RemoteFrameKey.self,
+                                   value: ["remote:\(button.id)": g.frame(in: .named(mapSpace))])
+        })
     }
 }
 
@@ -303,7 +371,7 @@ struct ButtonsPage: View {
                 RemoteDrawing(pressed: model.pressedButtons, selected: selected ?? recording) { id in
                     startRecording(id)
                 }
-                .frame(width: 112, height: 490)
+                .frame(width: 126, height: 490)
                 .padding(.top, 14)
                 column(RemoteButton.right)
             }
@@ -761,7 +829,7 @@ struct ConnectionPage: View {
                         Text("Amazon Remote").font(.title3.bold())
                         StatusPill(connected: model.connected)
                         RemoteDrawing(pressed: model.pressedButtons)
-                            .frame(width: 92, height: 420)
+                            .frame(width: 108, height: 420)
                             .coordinateSpace(name: mapSpace)
                         Label(model.micOn ? "マイク動作中" : "音声ボタンを押している間だけマイクが動きます",
                               systemImage: model.micOn ? "mic.fill" : "mic")
