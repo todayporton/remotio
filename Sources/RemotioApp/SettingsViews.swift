@@ -263,7 +263,12 @@ struct ButtonsPage: View {
 
     var body: some View {
         VStack(alignment: .leading, spacing: 14) {
-            PageHeader(title: SettingsPage.buttons.title) { StatusPill(connected: model.connected) }
+            PageHeader(title: SettingsPage.buttons.title) {
+                HStack(spacing: 12) {
+                    targetMenu
+                    StatusPill(connected: model.connected)
+                }
+            }
             ScrollView {
                 map
                     .coordinateSpace(name: mapSpace)
@@ -311,7 +316,7 @@ struct ButtonsPage: View {
     private func card(_ button: RemoteButton) -> some View {
         let isRecording = recording == button.id
         let active = isRecording || selected == button.id || model.pressedButtons.contains(button.id)
-        let binding = model.bindings[button.id]
+        let binding = model.displayedBindings[button.id]
         return Card(highlighted: active, padding: 8) {
             HStack(spacing: 8) {
                 Image(systemName: button.symbol).frame(width: 20).foregroundStyle(.secondary)
@@ -338,6 +343,12 @@ struct ButtonsPage: View {
         Menu {
             Button("キーを入力…") { startRecording(id) }
             Divider()
+            if model.isOverridden(id) {
+                Button("共通の設定に戻す") {
+                    model.useGlobalBinding(id)
+                    clearSelection()
+                }
+            }
             Button(unassigned) { assign(id, nil) }
             if allowsDisabled { Button("無効") { assign(id, ActionCatalog.disabled) } }
             Divider()
@@ -365,15 +376,19 @@ struct ButtonsPage: View {
         .fixedSize()
         .padding(.horizontal, 8)
         .padding(.vertical, 3)
-        .background(Color.primary.opacity(0.07), in: RoundedRectangle(cornerRadius: 6))
+        // アプリの編集中に、共通の設定を上書きしている項目は色を付ける
+        .background(model.isOverridden(id) ? Color.accentColor.opacity(0.25) : Color.primary.opacity(0.07),
+                    in: RoundedRectangle(cornerRadius: 6))
+        .overlay(RoundedRectangle(cornerRadius: 6)
+            .strokeBorder(model.isOverridden(id) ? Color.accentColor : Color.clear))
         .accessibilityLabel("\(title) の操作")
         .accessibilityValue(binding ?? unassigned)
     }
 
     /// 長押しと2回押しの設定を開くボタン。設定済みなら塗りつぶしのアイコンにする
     private func gestureButton(_ button: RemoteButton) -> some View {
-        let configured = model.bindings["\(button.id)\(KeyMap.longSuffix)"] != nil
-            || model.bindings["\(button.id)\(KeyMap.doubleSuffix)"] != nil
+        let configured = model.displayedBindings["\(button.id)\(KeyMap.longSuffix)"] != nil
+            || model.displayedBindings["\(button.id)\(KeyMap.doubleSuffix)"] != nil
         return Button {
             editingGestures = button.id
         } label: {
@@ -393,7 +408,7 @@ struct ButtonsPage: View {
         let longID = "\(button.id)\(KeyMap.longSuffix)"
         let doubleID = "\(button.id)\(KeyMap.doubleSuffix)"
         let modeID = "\(button.id)\(KeyMap.longModeSuffix)"
-        let mode = model.bindings[modeID].flatMap(LongPressMode.init(rawValue:)) ?? .once
+        let mode = model.displayedBindings[modeID].flatMap(LongPressMode.init(rawValue:)) ?? .once
         return VStack(alignment: .leading, spacing: 12) {
             Text("\(button.title) の押し方").font(.headline)
             Grid(alignment: .leading, horizontalSpacing: 12, verticalSpacing: 10) {
@@ -412,7 +427,7 @@ struct ButtonsPage: View {
                     .labelsHidden()
                     .pickerStyle(.segmented)
                     .fixedSize()
-                    .disabled(model.bindings[longID] == nil)
+                    .disabled(model.displayedBindings[longID] == nil)
                 }
                 GridRow {
                     Text("2回押し")
@@ -433,7 +448,7 @@ struct ButtonsPage: View {
                 Button("キーを入力…", action: clearSelection)
                     .accessibilityLabel("\(title) のキー入力を中止")
             } else {
-                actionMenu(id: id, title: title, binding: model.bindings[id],
+                actionMenu(id: id, title: title, binding: model.displayedBindings[id],
                            unassigned: String(localized: "割り当てなし"), allowsDisabled: false)
             }
         }
@@ -480,18 +495,84 @@ struct ButtonsPage: View {
                     let name = recordingTitle(recording)
                     Text("「\(name)」に割り当てるキーを押してください。修飾キーだけ(Fn、右 ⌥ など)も押して離すと設定できます。待ち受け中のキー入力は他のアプリへ送りません。")
                         .font(.callout)
+                } else if let app = model.editingApp {
+                    Text("「\(AppInfo.name(of: app))」が前面にあるときだけ使う割り当てです。色の付いた項目は共通の設定を上書きしています。メニューの「共通の設定に戻す」で戻せます。")
+                        .font(.callout).foregroundStyle(.secondary)
                 } else {
                     Text("各ボタンのメニューから操作を選びます。「標準」は Mac の標準動作をそのまま通し、「無効」は何もしません。この画面を操作している間は、リモコンから割り当てたキーを送りません。")
                         .font(.callout).foregroundStyle(.secondary)
                 }
                 Spacer()
                 if recording != nil { Button("キャンセル", action: clearSelection) }
-                Button("初期設定に戻す") {
+                Button(model.editingApp == nil ? String(localized: "初期設定に戻す") : String(localized: "上書きをすべて消す")) {
                     clearSelection()
                     model.restoreDefaultBindings()
                 }
             }
         }
+    }
+
+    /// 編集する対象(共通か、個別の割り当てを持つアプリ)を選ぶ
+    private var targetMenu: some View {
+        let apps = model.appBindings.keys.sorted { AppInfo.name(of: $0) < AppInfo.name(of: $1) }
+        let addable = NSWorkspace.shared.runningApplications
+            .filter { $0.activationPolicy == .regular }
+            .compactMap(\.bundleIdentifier)
+            .filter { $0 != Bundle.main.bundleIdentifier && model.appBindings[$0] == nil }
+        return Menu {
+            Button("共通(すべてのアプリ)") { selectTarget(nil) }
+            if !apps.isEmpty {
+                Divider()
+                ForEach(apps, id: \.self) { app in
+                    Button(AppInfo.name(of: app)) { selectTarget(app) }
+                }
+            }
+            Divider()
+            Menu("アプリを追加") {
+                ForEach(Array(Set(addable)).sorted { AppInfo.name(of: $0) < AppInfo.name(of: $1) }, id: \.self) { app in
+                    Button(AppInfo.name(of: app)) { addApp(app) }
+                }
+                Divider()
+                Button("その他のアプリ…", action: chooseOtherApp)
+            }
+            if let app = model.editingApp {
+                Divider()
+                Button("「\(AppInfo.name(of: app))」の割り当てを削除") {
+                    clearSelection()
+                    model.removeApp(app)
+                }
+            }
+        } label: {
+            HStack(spacing: 6) {
+                if let app = model.editingApp, let icon = AppInfo.icon(of: app) {
+                    Image(nsImage: icon)
+                } else {
+                    Image(systemName: "square.grid.2x2")
+                }
+                Text(model.editingApp.map(AppInfo.name(of:)) ?? String(localized: "共通(すべてのアプリ)"))
+            }
+        }
+        .fixedSize()
+        .accessibilityLabel("割り当ての対象")
+    }
+
+    private func selectTarget(_ app: String?) {
+        clearSelection()
+        model.editingApp = app
+    }
+
+    private func addApp(_ app: String) {
+        clearSelection()
+        model.addApp(app)
+    }
+
+    private func chooseOtherApp() {
+        let panel = NSOpenPanel()
+        panel.allowedContentTypes = [.application]
+        panel.directoryURL = URL(fileURLWithPath: "/Applications")
+        guard panel.runModal() == .OK, let url = panel.url,
+              let id = Bundle(url: url)?.bundleIdentifier else { return }
+        addApp(id)
     }
 
     /// 待ち受け中の割り当ての名前(例: 「TV の長押し」)
@@ -786,5 +867,24 @@ struct LogsPage: View {
         }
         .padding(22)
         .padding(.top, 8)
+    }
+}
+
+/// バンドル ID からアプリの名前とアイコンを引く
+enum AppInfo {
+    static func url(of bundleID: String) -> URL? {
+        NSWorkspace.shared.urlForApplication(withBundleIdentifier: bundleID)
+    }
+
+    static func name(of bundleID: String) -> String {
+        guard let url = url(of: bundleID) else { return bundleID }
+        return FileManager.default.displayName(atPath: url.path).replacingOccurrences(of: ".app", with: "")
+    }
+
+    static func icon(of bundleID: String) -> NSImage? {
+        guard let url = url(of: bundleID) else { return nil }
+        let icon = NSWorkspace.shared.icon(forFile: url.path)
+        icon.size = NSSize(width: 16, height: 16)
+        return icon
     }
 }

@@ -493,4 +493,12 @@ final class RemoteCoreTests: XCTestCase {
         XCTAssertEqual(Set(map.suppressedButtons), ["tv"])
         XCTAssertThrowsError(try KeyMap(["tv.long.mode": "sometimes"]))
     }
+
+    func testAppOverridesReplaceOnlyTheirButtons() throws {
+        let global = ["select": "return", "back": "escape", "tv.long": "b"]
+        let merged = AppKeymaps.merge(global, ["select": "space", "back": AppKeymaps.standardValue, "menu": "cmd+w"])
+        XCTAssertEqual(merged, ["select": "space", "menu": "cmd+w", "tv.long": "b"])
+        XCTAssertEqual(AppKeymaps.merge(global, nil), global)
+        XCTAssertNoThrow(try KeyMap(merged))
+    }
 }

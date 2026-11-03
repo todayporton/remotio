@@ -20,7 +20,14 @@ final class AppModel: ObservableObject {
     @Published private(set) var driverError: String?
     /// 押されているボタン(画面のリモコン図とカードに反映する)
     @Published private(set) var pressedButtons: Set<String> = []
+    /// 共通の割り当て
     @Published private(set) var bindings: [String: String] = KeyMap.defaultBindings
+    /// アプリごとの割り当て(バンドル ID → 共通の割り当てとの差分)
+    @Published private(set) var appBindings: [String: [String: String]] = [:]
+    /// 設定画面で編集している対象。nil なら共通
+    @Published var editingApp: String?
+    /// 割り当てに使っている前面のアプリ。Remotio 自身が前面のときは直前のアプリのまま
+    @Published private(set) var activeApp: String?
     /// 「他の出力デバイスを使う」がオフのときは、内蔵の仮想マイクへ送る
     @Published var useCustomOutput: Bool {
         didSet {
@@ -52,12 +59,17 @@ final class AppModel: ObservableObject {
     private var router: ButtonKeyRouter?
     private var suppressor: KeySuppressor?
 
-    private var keymapURL: URL {
+    private var supportDirectory: URL {
         let dir = FileManager.default.urls(for: .applicationSupportDirectory, in: .userDomainMask)[0]
             .appendingPathComponent("Remotio", isDirectory: true)
         try? FileManager.default.createDirectory(at: dir, withIntermediateDirectories: true)
-        return dir.appendingPathComponent("keymap.json")
+        return dir
     }
+    private var keymapURL: URL { supportDirectory.appendingPathComponent("keymap.json") }
+    private var appKeymapsURL: URL { supportDirectory.appendingPathComponent("app-keymaps.json") }
+    /// 今かけている元のキー入力の無効化の対象。変わったときだけ掛け直す
+    private var suppressedButtons: Set<String> = []
+    private var activationObserver: NSObjectProtocol?
 
     init() {
         micGainDecibels = AudioGain.clamp(decibels: UserDefaults.standard.double(forKey: "micGainDecibels"))
@@ -66,6 +78,17 @@ final class AppModel: ObservableObject {
         if let data = try? Data(contentsOf: keymapURL),
            let saved = try? JSONDecoder().decode([String: String].self, from: data) {
             bindings = saved
+        }
+        if let data = try? Data(contentsOf: appKeymapsURL),
+           let saved = try? JSONDecoder().decode([String: [String: String]].self, from: data) {
+            appBindings = saved
+        }
+        activeApp = Self.frontmostAppID()
+        activationObserver = NSWorkspace.shared.notificationCenter.addObserver(
+            forName: NSWorkspace.didActivateApplicationNotification, object: nil, queue: .main
+        ) { [weak self] note in
+            let app = note.userInfo?[NSWorkspace.applicationUserInfoKey] as? NSRunningApplication
+            self?.frontmostAppChanged(app?.bundleIdentifier)
         }
         refreshDevices()
         refreshPermissions()
@@ -143,15 +166,44 @@ final class AppModel: ObservableObject {
         router?.releaseAll()
     }
 
+    private static func frontmostAppID() -> String? {
+        let id = NSWorkspace.shared.frontmostApplication?.bundleIdentifier
+        return id == Bundle.main.bundleIdentifier ? nil : id
+    }
+
+    /// 前面のアプリが変わったら、そのアプリの割り当てに切り替える
+    private func frontmostAppChanged(_ bundleID: String?) {
+        guard let bundleID, bundleID != Bundle.main.bundleIdentifier, bundleID != activeApp else { return }
+        let before = appBindings[activeApp ?? ""]
+        activeApp = bundleID
+        // どちらのアプリにも個別の割り当てがなければ、作り直す必要はない
+        guard before != nil || appBindings[bundleID] != nil else { return }
+        log(appBindings[bundleID] != nil ? String(localized: "割り当てを切り替えました: \(AppInfo.name(of: bundleID))")
+                                         : String(localized: "共通の割り当てに戻しました"))
+        rebuildMapping()
+        if connected { applySuppressionIfChanged() }
+    }
+
+    /// 前面のアプリに使う割り当て
+    private var activeBindings: [String: String] {
+        AppKeymaps.merge(bindings, activeApp.flatMap { appBindings[$0] })
+    }
+
     private func rebuildMapping() {
         releaseKeys()
         do {
-            let map = try KeyMap(bindings, standardKeys: standardKeys)
+            let map = try KeyMap(activeBindings, standardKeys: standardKeys)
             router = ButtonKeyRouter(map: map, voiceButton: profile.voiceButtonName) { [weak self] in self?.post($0) }
             suppressor = KeySuppressor(profile: profile, buttons: map.suppressedButtons + [profile.voiceButtonName])
         } catch {
             keymapError = "\(error)"
         }
+    }
+
+    /// アプリを切り替えたとき、止めるボタンが変わる場合だけ元のキー入力の無効化を掛け直す
+    private func applySuppressionIfChanged() {
+        guard let buttons = try? KeyMap(activeBindings).suppressedButtons else { return }
+        if Set(buttons) != suppressedButtons { applySuppression() }
     }
 
     /// 押し方を判定するボタンで、タップが「標準」のときに送る操作
@@ -163,6 +215,7 @@ final class AppModel: ObservableObject {
 
     private func applySuppression() {
         guard let suppressor else { return }
+        suppressedButtons = Set((try? KeyMap(activeBindings).suppressedButtons) ?? [])
         log(suppressor.apply() ? String(localized: "元のキー入力の無効化: 成功") : String(localized: "元のキー入力の無効化: 失敗"))
     }
 
@@ -302,10 +355,71 @@ final class AppModel: ObservableObject {
     /// 1 ボタンの割り当てを変更して保存する。nil で割り当てなし。
     var voiceButtonName: String { profile.voiceButtonName }
 
+    /// 設定画面に表示する割り当て(編集中の対象のもの)
+    var displayedBindings: [String: String] {
+        editingApp.map { AppKeymaps.merge(bindings, appBindings[$0]) } ?? bindings
+    }
+
+    /// 編集中のアプリで、共通の割り当てを上書きしている項目か
+    func isOverridden(_ id: String) -> Bool {
+        editingApp.flatMap { appBindings[$0]?[id] } != nil
+    }
+
     func setBinding(_ button: String, to key: String?) {
+        if let app = editingApp {
+            var overrides = appBindings[app] ?? [:]
+            overrides[button] = key ?? AppKeymaps.standardValue
+            saveApp(app, overrides)
+            return
+        }
         var edited = bindings
         edited[button] = key
         save(edited)
+    }
+
+    /// 編集中のアプリの項目を、共通の割り当てに戻す
+    func useGlobalBinding(_ id: String) {
+        guard let app = editingApp, var overrides = appBindings[app] else { return }
+        overrides[id] = nil
+        saveApp(app, overrides)
+    }
+
+    /// アプリを個別の割り当ての対象に加え、編集を始める
+    func addApp(_ bundleID: String) {
+        if appBindings[bundleID] == nil { saveApp(bundleID, [:]) }
+        editingApp = bundleID
+    }
+
+    func removeApp(_ bundleID: String) {
+        var all = appBindings
+        all[bundleID] = nil
+        saveAppBindings(all)
+        if editingApp == bundleID { editingApp = nil }
+    }
+
+    private func saveApp(_ app: String, _ overrides: [String: String]) {
+        do {
+            _ = try KeyMap(AppKeymaps.merge(bindings, overrides))
+        } catch {
+            keymapError = "\(error)"
+            return
+        }
+        var all = appBindings
+        all[app] = overrides
+        saveAppBindings(all)
+    }
+
+    private func saveAppBindings(_ all: [String: [String: String]]) {
+        do {
+            try JSONEncoder().encode(all).write(to: appKeymapsURL)
+            appBindings = all
+            keymapError = nil
+            rebuildMapping()
+            if connected { applySuppressionIfChanged() }
+            log(String(localized: "キー割り当てを保存しました"))
+        } catch {
+            keymapError = "\(error)"
+        }
     }
 
     /// メニューとボタンに出す、何も割り当てていないときの名前
@@ -313,12 +427,20 @@ final class AppModel: ObservableObject {
         if button == profile.voiceButtonName { return String(localized: "キーなし") }
         guard profile.systemUsage(of: button) != nil else { return String(localized: "割り当てなし") }
         // 長押しか2回押しがあると元のキー入力を止めるので、Remotio から送れない標準動作は使えない
-        let hasGestures = bindings[button + KeyMap.longSuffix] != nil || bindings[button + KeyMap.doubleSuffix] != nil
+        let shown = displayedBindings
+        let hasGestures = shown[button + KeyMap.longSuffix] != nil || shown[button + KeyMap.doubleSuffix] != nil
         if hasGestures && profile.standardKey(of: button) == nil { return String(localized: "割り当てなし") }
         return profile.standardActionName(of: button).map { String(localized: "標準(\($0))") } ?? String(localized: "標準")
     }
 
-    func restoreDefaultBindings() { save(KeyMap.defaultBindings) }
+    /// 共通の割り当てを初期設定に戻す。アプリの編集中は、そのアプリの上書きをすべて消す
+    func restoreDefaultBindings() {
+        if let app = editingApp {
+            saveApp(app, [:])
+        } else {
+            save(KeyMap.defaultBindings)
+        }
+    }
 
     private func save(_ edited: [String: String]) {
         do {
