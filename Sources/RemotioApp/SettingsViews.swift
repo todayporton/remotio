@@ -173,6 +173,8 @@ struct RemoteDrawing: View {
     private static let voiceBlue = Color(red: 0.1, green: 0.66, blue: 0.9)
     /// 塗りつぶしの記号は横に広く大きく見えるので、ほかより小さく描く
     private static let mediaKeys: Set<String> = ["rewind", "play_pause", "fast_forward"]
+    /// チャンネルの三角は塗りつぶしで大きく見えるので、さらに小さく描く
+    private static let channelKeys: Set<String> = ["channel_up", "channel_down"]
 
     var body: some View {
         GeometryReader { geo in
@@ -210,10 +212,15 @@ struct RemoteDrawing: View {
         .aspectRatio(layout.aspect, contentMode: .fit)
     }
 
+    private func glyphScale(_ id: String) -> CGFloat {
+        if Self.channelKeys.contains(id) { return 0.26 }
+        return Self.mediaKeys.contains(id) ? 0.34 : 0.46
+    }
+
     private func key(_ button: RemoteButton, active: Bool, width w: CGFloat) -> some View {
         let size = CGSize(width: button.size.width * w, height: button.size.height * w)
         let glyph = Image(systemName: button.glyph ?? button.symbol)
-            .font(.system(size: min(size.width, size.height) * (Self.mediaKeys.contains(button.id) ? 0.34 : 0.46),
+            .font(.system(size: min(size.width, size.height) * glyphScale(button.id),
                           weight: .semibold))
         return Button { onSelect?(button.id) } label: {
             ZStack {
@@ -314,7 +321,7 @@ struct ButtonsPage: View {
             HStack(alignment: .top, spacing: 40) {
                 column(layout.left)
                 Color.clear.frame(width: 126)
-                column(layout.right)
+                column(layout.right, gap: layout.rightGap)
             }
             // リモコン図は割り当ての一覧の縦の中央に置く
             .overlay {
@@ -322,14 +329,23 @@ struct ButtonsPage: View {
                     startRecording(id)
                 }
                 .frame(width: 126, height: 126 / layout.aspect)
+                // 右の一覧の上を空けたぶん、図も下げる
+                .offset(y: CGFloat(layout.rightGap) * cardStep)
             }
             // リモコン図は暗いので、線は図の上に重ねて描く
             leaderLines.allowsHitTesting(false)
         }
     }
 
-    private func column(_ buttons: [RemoteButton]) -> some View {
+    /// カード1枚ぶんの高さと間隔
+    private var cardStep: CGFloat {
+        (frames.first { $0.key.hasPrefix("card:") }?.value.height ?? 38) + 6
+    }
+
+    /// gap はリストの上に空けるカードの枚数
+    private func column(_ buttons: [RemoteButton], gap: Int = 0) -> some View {
         VStack(spacing: 6) {
+            if gap > 0 { Color.clear.frame(height: CGFloat(gap) * cardStep - 6) }
             ForEach(buttons) { button in
                 card(button)
                     .background(GeometryReader { g in

@@ -36,6 +36,8 @@ struct RemoteLayout {
     let ringDiameter: CGFloat
     /// 縦長ボタンの土台。中心は割合、大きさは幅に対する割合
     let rockers: [(center: CGPoint, size: CGSize)]
+    /// 右の一覧の上に空けるカードの枚数(左右の一覧の高さをそろえる)
+    var rightGap = 0
 
     var all: [RemoteButton] { left + right }
 
@@ -141,13 +143,13 @@ struct RemoteLayout {
         return RemoteLayout(
             left: top.left + [
                 rewind(h),
-                volumeUp(0.5, h),
                 button("mute", String(localized: "ミュート"), "speaker.slash", 0.19, rockerTopY, height: h),
+                volumeUp(0.5, h),
+                volumeDown(0.5, h),
                 app(1, 0.29, appRowY, height: h),
                 app(3, 0.29, appRowY + appRowSpacing, height: h),
             ],
             right: [top.right[0], top.right[1], top.right[2], home(h), top.right[3], playPause(h), fastForward(h),
-                    volumeDown(0.5, h),
                     button("tv", "TV", "tv", 0.81, rockerTopY, height: h),
                     app(2, 0.71, appRowY, height: h),
                     app(4, 0.71, appRowY + appRowSpacing, height: h)],
@@ -190,7 +192,8 @@ struct RemoteLayout {
             ],
             aspect: 1 / h,
             ringCenter: .init(x: 0.5, y: ringY / h), ringDiameter: ringDiameter,
-            rockers: [rocker(0.19, h), rocker(0.81, h)]
+            rockers: [rocker(0.19, h), rocker(0.81, h)],
+            rightGap: 1
         )
     }()
 }
