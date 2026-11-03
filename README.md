@@ -4,7 +4,7 @@
 
 Use Bluetooth remotes as input devices on your Mac.
 
-Remotio turns a Bluetooth remote into a wireless microphone and controller for your Mac. It currently supports the Alexa Voice Remote that comes with the Fire TV Stick 4K. This is an unofficial project and is not affiliated with Amazon.
+Remotio turns a Bluetooth remote into a wireless microphone and controller for your Mac. It supports the Alexa Voice Remote that comes with the Fire TV Stick 4K and the Alexa Voice Remote Pro (tested only with a compatible remote). You can connect several remotes at once, and each one keeps its own key assignments. This is an unofficial project and is not affiliated with Amazon.
 
 > **This is an alpha release.** It has only been tested in a limited set of environments. The settings format and behavior may change.
 
@@ -18,7 +18,13 @@ Requirements: an Apple silicon Mac, macOS 13 or later, and a supported remote pa
 4. In the app you want to dictate into, choose "Remotio Microphone" as the input.
 5. Choose Open Settings and Logs… from the menu bar icon, open Buttons, and assign keys to the voice button and other buttons. You can assign a dictation app's push-to-talk key to the voice button. Use the hand icon next to each button to also assign actions to a long press and a double press. Add an app from the Global menu at the top of the page to create assignments that apply only while that app is in front. Items you haven't changed for an app show "Global" and follow the global assignments. With Open URL… and Run Shell Command… in the menu, a button can open a URL (such as a Raycast URL) or run a shell command instead of sending a key.
 
+Assignments are saved for each remote. Choose the remote to edit from the menu with the remote's name at the top of Buttons. Pressing a button on another remote while the settings window is in front also switches to it. A remote you connect for the first time starts with the existing assignments. When a remote that isn't connected is selected, you can remove its settings from the same menu.
+
+The power button can be assigned too, but the remote itself reports it about 1 second late, so long press and double press aren't available for it.
+
 To use macOS Dictation, choose "Remotio Microphone" as the microphone in System Settings > Keyboard > Dictation. In the voice button's menu, under Dictation, choose the same shortcut as Shortcut on that settings page. Dictation then starts when you press the button and stops when you release it.
+
+When several remotes are connected, only one at a time can use the microphone. While one is talking, the voice button on the others is ignored.
 
 All audio is processed on your Mac and is never sent anywhere. Remotio doesn't change the system's default input and output devices.
 
@@ -108,7 +114,7 @@ The app in the distributed DMG isn't notarized, so Gatekeeper blocks it on first
 
 The driver for the virtual microphone `Remotio Microphone` is included. Install it to `/Library/Audio/Plug-Ins/HAL` with Install in Connection & Audio. It requires an administrator password, and the Mac's audio pauses briefly while it installs. BlackHole isn't needed. The driver appears only in the input list, not the output list; Remotio passes audio through a hidden device. To use BlackHole or another device instead, choose it with Use another output device. On a real Mac, we've confirmed that the driver doesn't appear in the output list, that the remote's audio reaches other apps through it, and that permissions survive a rebuild as long as the signature stays the same.
 
-The app shows the connection and microphone status, lets you choose the audio output, assign keys on a drawing of the remote (press a key to record it), check permissions, view logs, and open the app at login. The button layout in the drawing may not exactly match the real remote. The output defaults to None. The app needs Input Monitoring permission, and sending keys also needs Accessibility permission.
+The app shows the connection and microphone status, lets you choose the audio output, assign keys on a drawing of the remote (press a key to record it), check permissions, view logs, and open the app at login. The drawing changes with the model. Both drawings are built from one shared layout, so small details may differ from the real remote. The output defaults to None. The app needs Input Monitoring permission, and sending keys also needs Accessibility permission.
 
 ## Structure
 
@@ -125,9 +131,10 @@ The app shows the connection and microphone status, lets you choose the audio ou
 | `Sources/RemoteCore/KeyMapping.swift` | Key assignments and sending keys |
 | `Sources/RemoteCore/KeySuppressor.swift` | Stopping the remote's original key input |
 | `Sources/remotio/main.swift` | CLI |
+| `Sources/RemotioApp/RemoteLayout.swift` | Button layout of each model's remote drawing |
 | `Sources/RemotioApp/` | Menu bar app |
 
-To support another remote, implement `RemoteProfile`.
+To support another remote, implement `RemoteProfile`. For another model that uses the same protocol, add its product ID to `productIDs`, add its codes to the button tables, and add a drawing to `RemoteLayout`.
 
 ## How it accesses the remote
 
@@ -159,6 +166,24 @@ Both press and release confirmed:
 | Back | `0x01` | `F1` |
 | Play/Pause | `0x02` | `CD 00` |
 | Voice | `0x02` | `21 02` |
+| Power | `0x01` | `66` |
+
+The power button's press and release arrive together about 1 second after you press it, even if you keep holding it.
+
+### Alexa Voice Remote Pro (compatible remote)
+
+Device: VID `0x0171` / PID `0x0425` (IOHID product name `AR`)
+
+Its HID descriptor is byte-for-byte identical to the Fire TV Stick 4K remote's, and audio and microphone control work the same way. The extra buttons send these codes in report `0x02`:
+
+| Button | Code |
+|---|---|
+| Headphones | `0x0280` |
+| Settings | `0x0033` |
+| Channel + / − | `0x009C` / `0x009D` |
+| Custom 1 / 2 | `0x027E` / `0x027F` |
+
+The genuine Amazon remote hasn't been tested.
 
 ### Audio path (remote → `stream` → BlackHole 2ch → recorded on the input side)
 
@@ -180,6 +205,8 @@ Both press and release confirmed:
 - While you use the settings window, assigned keys aren't sent from the remote (not tested on real hardware). While waiting for a key to record, Remotio receives keys before other apps and doesn't pass them on (requires Accessibility permission; without it, only keys within the app are received).
 - The menu bar app's GUI has been checked only in a VM (no remote, no audio). On a real Mac, sending keys from the remote and passing audio to an app using BlackHole as its input both worked. Opening at login hasn't been tested on real hardware.
 - If the output device's sample rate changes, audio output restarts automatically. Speech during the restart is lost.
+- Using separate assignments with two remotes connected at once, and ignoring the second remote's voice button, haven't been tested on real hardware.
+- Stopping the original key input tells remotes apart by serial number. Remotes whose serial number isn't alphanumeric are left out.
 - If the program crashes, the stopped key input stays in effect until the remote reconnects.
 
 ## Credits
