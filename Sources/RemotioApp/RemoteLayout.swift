@@ -149,13 +149,14 @@ struct RemoteLayout {
                 app(1, 0.29, appRowY, height: h),
                 app(3, 0.29, appRowY + appRowSpacing, height: h),
             ],
-            right: [top.right[0], top.right[1], top.right[2], home(h), top.right[3], playPause(h), fastForward(h),
+            right: [top.right[0], top.right[1], top.right[2], home(h), top.right[3], fastForward(h), playPause(h),
                     button("tv", "TV", "tv", 0.81, rockerTopY, height: h),
                     app(2, 0.71, appRowY, height: h),
                     app(4, 0.71, appRowY + appRowSpacing, height: h)],
             aspect: 1 / h,
             ringCenter: .init(x: 0.5, y: ringY / h), ringDiameter: ringDiameter,
-            rockers: [rocker(0.5, h)]
+            rockers: [rocker(0.5, h)],
+            rightGap: 1
         )
     }()
 
