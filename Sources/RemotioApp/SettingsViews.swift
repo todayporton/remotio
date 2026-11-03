@@ -574,8 +574,9 @@ struct ButtonsPage: View {
                 guard let from = frames["remote:\(button.id)"], let to = frames["card:\(button.id)"] else { continue }
                 let onLeft = to.midX < from.midX
                 let end = CGPoint(x: onLeft ? to.maxX : to.minX, y: to.midY)
-                // ボタンの記号に重ならないよう、カードの側の縁から引く
-                let start = CGPoint(x: onLeft ? from.minX : from.maxX, y: from.midY)
+                // ボタンの記号に重ならないよう、カードの側の縁から引く。決定ボタンは記号がないので中央から
+                let start = button.id == "select" ? CGPoint(x: from.midX, y: from.midY)
+                    : CGPoint(x: onLeft ? from.minX : from.maxX, y: from.midY)
                 var path = Path()
                 path.move(to: start)
                 let bend = abs(end.x - start.x) * 0.55
