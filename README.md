@@ -205,6 +205,7 @@ The genuine Amazon remote hasn't been tested.
 - While you use the settings window, assigned keys aren't sent from the remote (not tested on real hardware). While waiting for a key to record, Remotio receives keys before other apps and doesn't pass them on (requires Accessibility permission; without it, only keys within the app are received).
 - The menu bar app's GUI has been checked only in a VM (no remote, no audio). On a real Mac, sending keys from the remote and passing audio to an app using BlackHole as its input both worked. Opening at login hasn't been tested on real hardware.
 - If the output device's sample rate changes, audio output restarts automatically. Speech during the restart is lost.
+- With the compatible Remote Pro, audio is choppy and not usable. The remote makes an audio packet every 20 ms, but only about 36 per second (instead of 50) arrive from the compatible remote, so roughly 30–40% are lost before they reach the Mac. The result was the same with only that remote connected. The app can't recover the lost audio, and filling the gaps with packet loss concealment didn't help. Its buttons work fine. The genuine remote hasn't been tested.
 - Using separate assignments with two remotes connected at once, and ignoring the second remote's voice button, haven't been tested on real hardware.
 - Stopping the original key input tells remotes apart by serial number. Remotes whose serial number isn't alphanumeric are left out.
 - If the program crashes, the stopped key input stays in effect until the remote reconnects.
