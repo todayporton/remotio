@@ -68,7 +68,7 @@ EN = {
 "マイク: 動作中": "Microphone: On",
 "マイク: 停止中": "Microphone: Off",
 "仮想マイクが未インストールです": "The virtual microphone is not installed",
-"設定とログを開く…": "Open Settings and Logs…",
+"設定を開く…": "Open Settings…",
 "セットアップを開く…": "Open Setup…",
 "終了": "Quit",
 "音声(Push-to-Talk)": "Voice (Push-to-Talk)",

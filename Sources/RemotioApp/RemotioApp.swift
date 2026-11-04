@@ -79,7 +79,7 @@ struct MenuContent: View {
                 Text(error).font(.caption).foregroundStyle(.red)
             }
             Divider()
-            Button("設定とログを開く…") {
+            Button("設定を開く…") {
                 openWindow(id: "settings")
                 NSApp.activate(ignoringOtherApps: true)
             }

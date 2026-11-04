@@ -307,7 +307,7 @@
 "仮想マイクが未インストールです" = "The virtual microphone is not installed";
 
 /* Sources/RemotioApp/RemotioApp.swift:82 */
-"設定とログを開く…" = "Open Settings and Logs…";
+"設定を開く…" = "Open Settings…";
 
 /* Sources/RemotioApp/RemotioApp.swift:86 */
 "セットアップを開く…" = "Open Setup…";
