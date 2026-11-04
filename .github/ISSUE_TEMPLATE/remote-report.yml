@@ -72,4 +72,4 @@ body:
     id: version
     attributes:
       label: Remotio version / Remotio のバージョン
-      placeholder: e.g. 0.1.0-alpha.1
+      placeholder: e.g. 0.1.0

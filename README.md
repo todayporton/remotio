@@ -10,8 +10,6 @@ Use Bluetooth remotes as input devices on your Mac.
 
 Remotio turns a Bluetooth remote into a wireless microphone and controller for your Mac. It supports the Alexa Voice Remote that comes with the Fire TV Stick 4K and the Alexa Voice Remote Pro (tested only with a compatible remote). You can connect several remotes at once, and each one keeps its own key assignments. This is an unofficial project and is not affiliated with Amazon.
 
-> **This is an alpha release.** It has only been tested in a limited set of environments. The settings format and behavior may change.
-
 ## Installation
 
 Requirements: an Apple silicon Mac, macOS 13 or later, and a supported remote paired with the Mac
