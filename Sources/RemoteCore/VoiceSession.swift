@@ -5,6 +5,11 @@ import IOKit
 public final class VoiceSession {
     public let remote: HIDRemote
     public private(set) var stats = AudioStats()
+    /// 今の発話だけの到着統計。発話の終わりにログへ出す
+    private var utterance = AudioStats()
+    /// 指定すると、発話ごとに音声 Report を CaptureFile 形式で保存する(診断用)
+    public var captureDirectory: URL?
+    private var capture: FileHandle?
 
     public var onLog: ((String) -> Void)?
     public var onReport: ((InputReport) -> Void)?
@@ -67,6 +72,9 @@ public final class VoiceSession {
                 onLog?(String(localized: "デコード失敗: \(String(describing: error))"))
             }
             stats.record(timestampNs: report.timestampNs, payload: report.payload, decodeFailed: failed)
+            utterance.record(timestampNs: report.timestampNs, payload: report.payload, decodeFailed: failed)
+            try? capture?.write(contentsOf: CaptureFile.encode(timestampNs: report.timestampNs,
+                                                              reportID: report.reportID, payload: report.payload))
             return
         }
         var tracker = trackers[report.remoteID] ?? ButtonTracker(profile: remote.profile)
@@ -97,6 +105,17 @@ public final class VoiceSession {
         if enable {
             if let fresh = try? OpusDecoder() { decoder = fresh }
             stats.beginSession()
+            utterance = AudioStats()
+            openCapture(for: remoteID)
+        } else {
+            // 離した後も、120ms ほどは話し終わりの音声が届く
+            let name = remote.remotes[remoteID]?.name ?? "?"
+            DispatchQueue.main.asyncAfter(deadline: .now() + 0.4) { [weak self] in
+                guard let self, micOwner == nil else { return }
+                onLog?(String(localized: "音声の受信(\(name)): \(utterance.summary)"))
+                try? capture?.close()
+                capture = nil
+            }
         }
         if connected {
             remote.setMic(remoteID, enabled: enable) { [unowned self] r in
@@ -111,5 +130,19 @@ public final class VoiceSession {
                 onLog?(String(localized: "警告: マイク有効化から1.5秒経っても音声 Report が届きません"))
             }
         }
+    }
+
+    private func openCapture(for remoteID: UInt64) {
+        try? capture?.close()
+        capture = nil
+        guard let captureDirectory else { return }
+        try? FileManager.default.createDirectory(at: captureDirectory, withIntermediateDirectories: true)
+        let formatter = DateFormatter()
+        formatter.dateFormat = "yyyyMMdd-HHmmss"
+        let pid = remote.remotes[remoteID].map { String(format: "%04x", $0.productID) } ?? "unknown"
+        let url = captureDirectory.appendingPathComponent("\(formatter.string(from: Date()))-\(pid).bin")
+        FileManager.default.createFile(atPath: url.path, contents: nil)
+        capture = try? FileHandle(forWritingTo: url)
+        onLog?(String(localized: "音声を保存します: \(url.lastPathComponent)"))
     }
 }

@@ -208,4 +208,7 @@ EN = {
 "リモコンのボタンを押しても切り替わります": "Pressing a button on a remote also switches to it",
 "「%@」の設定を削除": "Remove Settings for “%@”",
 "%@(未接続)": "%@ (Not Connected)",
+"音声の受信(%@): %@": "Audio received (%@): %@",
+"音声を保存します: %@": "Saving audio: %@",
+"音声の出力: 音割れ %lld パケット、再生の途切れ %@ 回": "Audio output: %lld clipped packets, %@ playback gaps",
 }

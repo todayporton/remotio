@@ -114,167 +114,176 @@
 /* Sources/RemoteCore/OpusDecoder.swift:8 */
 "opus_decode 失敗: %@" = "opus_decode 失敗: %@";
 
-/* Sources/RemoteCore/PCMOutput.swift:83 */
+/* Sources/RemoteCore/PCMOutput.swift:88 */
 "音声出力を再開しました(デバイスの設定変更)" = "音声出力を再開しました(デバイスの設定変更)";
-
-/* Sources/RemoteCore/PCMOutput.swift:86 */
-"音声出力を再開できません: %@" = "音声出力を再開できません: %@";
 
 /* Sources/RemoteCore/PCMOutput.swift:9 */
 "出力デバイスの設定に失敗: OSStatus %d" = "出力デバイスの設定に失敗: OSStatus %d";
 
+/* Sources/RemoteCore/PCMOutput.swift:91 */
+"音声出力を再開できません: %@" = "音声出力を再開できません: %@";
+
 /* Sources/RemoteCore/RemoteProfile.swift:124 */
 "約1秒遅れて反応します" = "約1秒遅れて反応します";
 
-/* Sources/RemoteCore/VoiceSession.swift:103 */
+/* Sources/RemoteCore/VoiceSession.swift:115 */
+"音声の受信(%@): %@" = "音声の受信(%@): %@";
+
+/* Sources/RemoteCore/VoiceSession.swift:122 */
 "マイク有効化: %@" = "マイク有効化: %@";
 
-/* Sources/RemoteCore/VoiceSession.swift:103 */
+/* Sources/RemoteCore/VoiceSession.swift:122 */
 "マイク停止: %@" = "マイク停止: %@";
 
-/* Sources/RemoteCore/VoiceSession.swift:111 */
+/* Sources/RemoteCore/VoiceSession.swift:130 */
 "警告: マイク有効化から1.5秒経っても音声 Report が届きません" = "警告: マイク有効化から1.5秒経っても音声 Report が届きません";
 
-/* Sources/RemoteCore/VoiceSession.swift:32 */
+/* Sources/RemoteCore/VoiceSession.swift:146 */
+"音声を保存します: %@" = "音声を保存します: %@";
+
+/* Sources/RemoteCore/VoiceSession.swift:37 */
 "[接続] %@ audio=%@ micEnable=%@" = "[接続] %@ audio=%@ micEnable=%@";
 
-/* Sources/RemoteCore/VoiceSession.swift:34 */
+/* Sources/RemoteCore/VoiceSession.swift:39 */
 "[接続] %@ Descriptor から音声 Report を特定できません" = "[接続] %@ Descriptor から音声 Report を特定できません";
 
-/* Sources/RemoteCore/VoiceSession.swift:42 */
+/* Sources/RemoteCore/VoiceSession.swift:47 */
 "[切断] %@" = "[切断] %@";
 
-/* Sources/RemoteCore/VoiceSession.swift:67 */
+/* Sources/RemoteCore/VoiceSession.swift:72 */
 "デコード失敗: %@" = "デコード失敗: %@";
 
-/* Sources/RemoteCore/VoiceSession.swift:79 */
+/* Sources/RemoteCore/VoiceSession.swift:87 */
 "押下: %@" = "押下: %@";
 
-/* Sources/RemoteCore/VoiceSession.swift:79 */
+/* Sources/RemoteCore/VoiceSession.swift:87 */
 "解放: %@" = "解放: %@";
 
-/* Sources/RemoteCore/VoiceSession.swift:87 */
+/* Sources/RemoteCore/VoiceSession.swift:95 */
 "別のリモコンが話しているため、音声ボタンを無視しました" = "別のリモコンが話しているため、音声ボタンを無視しました";
 
-/* Sources/RemotioApp/AppModel.swift:158 */
+/* Sources/RemotioApp/AppModel.swift:153 */
+"音声の出力: 音割れ %lld パケット、再生の途切れ %@ 回" = "音声の出力: 音割れ %lld パケット、再生の途切れ %@ 回";
+
+/* Sources/RemotioApp/AppModel.swift:175 */
 "リモコンを開けません: %@" = "リモコンを開けません: %@";
 
-/* Sources/RemotioApp/AppModel.swift:163 */
+/* Sources/RemotioApp/AppModel.swift:180 */
 "起動エラー: %@" = "起動エラー: %@";
 
-/* Sources/RemotioApp/AppModel.swift:178 */
+/* Sources/RemotioApp/AppModel.swift:195 */
 "新しいリモコンを登録しました: %@" = "新しいリモコンを登録しました: %@";
 
-/* Sources/RemotioApp/AppModel.swift:193 */
+/* Sources/RemotioApp/AppModel.swift:210 */
 "未対応のボタンの入力: %@" = "未対応のボタンの入力: %@";
 
-/* Sources/RemotioApp/AppModel.swift:224 */
+/* Sources/RemotioApp/AppModel.swift:241 */
 "アクセシビリティの権限がないためキーを送信しません" = "アクセシビリティの権限がないためキーを送信しません";
 
-/* Sources/RemotioApp/AppModel.swift:249 */
+/* Sources/RemotioApp/AppModel.swift:266 */
 "割り当てを切り替えました: %@" = "割り当てを切り替えました: %@";
 
-/* Sources/RemotioApp/AppModel.swift:250 */
+/* Sources/RemotioApp/AppModel.swift:267 */
 "既定の割り当てに戻しました" = "既定の割り当てに戻しました";
 
-/* Sources/RemotioApp/AppModel.swift:305 */
+/* Sources/RemotioApp/AppModel.swift:322 */
 "元のキー入力の無効化: 成功" = "元のキー入力の無効化: 成功";
 
-/* Sources/RemotioApp/AppModel.swift:305 */
+/* Sources/RemotioApp/AppModel.swift:322 */
 "元のキー入力の無効化: 失敗" = "元のキー入力の無効化: 失敗";
 
-/* Sources/RemotioApp/AppModel.swift:326 */
+/* Sources/RemotioApp/AppModel.swift:343 */
 "音声の送り先: %@" = "音声の送り先: %@";
 
-/* Sources/RemotioApp/AppModel.swift:328 */
+/* Sources/RemotioApp/AppModel.swift:345 */
 "音声出力を開始できません: %@" = "音声出力を開始できません: %@";
 
-/* Sources/RemotioApp/AppModel.swift:354 */
+/* Sources/RemotioApp/AppModel.swift:371 */
 "ドライバの処理に失敗: %@" = "ドライバの処理に失敗: %@";
 
-/* Sources/RemotioApp/AppModel.swift:399 */
+/* Sources/RemotioApp/AppModel.swift:416 */
 "アプリを開き直せません: %@" = "アプリを開き直せません: %@";
 
-/* Sources/RemotioApp/AppModel.swift:436 */
+/* Sources/RemotioApp/AppModel.swift:453 */
 "ログイン時の起動を変更できません: %@" = "ログイン時の起動を変更できません: %@";
 
-/* Sources/RemotioApp/AppModel.swift:512 */
+/* Sources/RemotioApp/AppModel.swift:529 */
 "キーなし" = "キーなし";
 
-/* Sources/RemotioApp/AppModel.swift:517 */
+/* Sources/RemotioApp/AppModel.swift:534 */
 "割り当てなし" = "割り当てなし";
 
-/* Sources/RemotioApp/AppModel.swift:518 */
+/* Sources/RemotioApp/AppModel.swift:535 */
 "標準(%@)" = "標準(%@)";
 
-/* Sources/RemotioApp/AppModel.swift:518 */
+/* Sources/RemotioApp/AppModel.swift:535 */
 "標準" = "標準";
 
-/* Sources/RemotioApp/AppModel.swift:559 */
+/* Sources/RemotioApp/AppModel.swift:576 */
 "キー割り当てを保存しました" = "キー割り当てを保存しました";
 
-/* Sources/RemotioApp/AppModel.swift:629 */
+/* Sources/RemotioApp/AppModel.swift:646 */
 "元のキー入力の設定を戻せませんでした" = "元のキー入力の設定を戻せませんでした";
 
 /* Sources/RemotioApp/DriverInstaller.swift:18 */
 "アプリにドライバが同梱されていません" = "アプリにドライバが同梱されていません";
 
-/* Sources/RemotioApp/RemoteLayout.swift:115 */
-"カスタム 1" = "カスタム 1";
-
-/* Sources/RemotioApp/RemoteLayout.swift:120 */
-"ヘッドホン" = "ヘッドホン";
-
-/* Sources/RemotioApp/RemoteLayout.swift:127 */
-"チャンネル +" = "チャンネル +";
-
-/* Sources/RemotioApp/RemoteLayout.swift:129 */
-"設定" = "設定";
-
-/* Sources/RemotioApp/RemoteLayout.swift:130 */
-"チャンネル −" = "チャンネル −";
-
-/* Sources/RemotioApp/RemoteLayout.swift:132 */
-"カスタム 2" = "カスタム 2";
-
-/* Sources/RemotioApp/RemoteLayout.swift:59 */
-"アプリ %lld" = "アプリ %lld";
-
-/* Sources/RemotioApp/RemoteLayout.swift:64 */
-"電源" = "電源";
-
-/* Sources/RemotioApp/RemoteLayout.swift:65 */
-"音声(Push-to-Talk)" = "音声(Push-to-Talk)";
-
-/* Sources/RemotioApp/RemoteLayout.swift:73 */
-"上" = "上";
-
-/* Sources/RemotioApp/RemoteLayout.swift:74 */
-"左" = "左";
-
-/* Sources/RemotioApp/RemoteLayout.swift:75 */
+/* Sources/RemotioApp/RemoteLayout.swift:100 */
 "戻る" = "戻る";
 
-/* Sources/RemotioApp/RemoteLayout.swift:77 */
-"音量 +" = "音量 +";
-
-/* Sources/RemotioApp/RemoteLayout.swift:83 */
+/* Sources/RemotioApp/RemoteLayout.swift:103 */
 "決定" = "決定";
 
-/* Sources/RemotioApp/RemoteLayout.swift:84 */
+/* Sources/RemotioApp/RemoteLayout.swift:105 */
 "右" = "右";
 
-/* Sources/RemotioApp/RemoteLayout.swift:85 */
+/* Sources/RemotioApp/RemoteLayout.swift:107 */
 "下" = "下";
 
-/* Sources/RemotioApp/RemoteLayout.swift:86 */
-"ホーム" = "ホーム";
-
-/* Sources/RemotioApp/RemoteLayout.swift:87 */
+/* Sources/RemotioApp/RemoteLayout.swift:109 */
 "メニュー" = "メニュー";
 
-/* Sources/RemotioApp/RemoteLayout.swift:90 */
+/* Sources/RemotioApp/RemoteLayout.swift:115 */
+"ホーム" = "ホーム";
+
+/* Sources/RemotioApp/RemoteLayout.swift:127 */
+"音量 +" = "音量 +";
+
+/* Sources/RemotioApp/RemoteLayout.swift:131 */
 "音量 −" = "音量 −";
+
+/* Sources/RemotioApp/RemoteLayout.swift:174 */
+"カスタム 1" = "カスタム 1";
+
+/* Sources/RemotioApp/RemoteLayout.swift:180 */
+"ヘッドホン" = "ヘッドホン";
+
+/* Sources/RemotioApp/RemoteLayout.swift:184 */
+"チャンネル +" = "チャンネル +";
+
+/* Sources/RemotioApp/RemoteLayout.swift:186 */
+"チャンネル −" = "チャンネル −";
+
+/* Sources/RemotioApp/RemoteLayout.swift:188 */
+"設定" = "設定";
+
+/* Sources/RemotioApp/RemoteLayout.swift:189 */
+"カスタム 2" = "カスタム 2";
+
+/* Sources/RemotioApp/RemoteLayout.swift:62 */
+"アプリ %lld" = "アプリ %lld";
+
+/* Sources/RemotioApp/RemoteLayout.swift:93 */
+"電源" = "電源";
+
+/* Sources/RemotioApp/RemoteLayout.swift:94 */
+"音声(Push-to-Talk)" = "音声(Push-to-Talk)";
+
+/* Sources/RemotioApp/RemoteLayout.swift:96 */
+"上" = "上";
+
+/* Sources/RemotioApp/RemoteLayout.swift:98 */
+"左" = "左";
 
 /* Sources/RemotioApp/RemotioApp.swift:30 */
 "Remotio" = "Remotio";
@@ -306,25 +315,25 @@
 /* Sources/RemotioApp/RemotioApp.swift:90 */
 "終了" = "終了";
 
-/* Sources/RemotioApp/SettingsViews.swift:1004 */
+/* Sources/RemotioApp/SettingsViews.swift:1023 */
 "「%@」で開く URL" = "「%@」で開く URL";
 
-/* Sources/RemotioApp/SettingsViews.swift:1004 */
+/* Sources/RemotioApp/SettingsViews.swift:1023 */
 "「%@」で実行するシェルコマンド" = "「%@」で実行するシェルコマンド";
 
-/* Sources/RemotioApp/SettingsViews.swift:1006 */
+/* Sources/RemotioApp/SettingsViews.swift:1025 */
 "raycast://extensions/… や https://…" = "raycast://extensions/… や https://…";
 
-/* Sources/RemotioApp/SettingsViews.swift:1006 */
+/* Sources/RemotioApp/SettingsViews.swift:1025 */
 "open -a Safari" = "open -a Safari";
 
-/* Sources/RemotioApp/SettingsViews.swift:1013 */
+/* Sources/RemotioApp/SettingsViews.swift:1032 */
 "ボタンを押したときに、この URL を開きます。Raycast などのアプリの URL も使えます。" = "ボタンを押したときに、この URL を開きます。Raycast などのアプリの URL も使えます。";
 
-/* Sources/RemotioApp/SettingsViews.swift:1014 */
+/* Sources/RemotioApp/SettingsViews.swift:1033 */
 "ボタンを押したときに、ログインシェル(zsh)で実行します。あなたの権限で実行されるので、内容を確認してから設定してください。失敗したときはログに出ます。" = "ボタンを押したときに、ログインシェル(zsh)で実行します。あなたの権限で実行されるので、内容を確認してから設定してください。失敗したときはログに出ます。";
 
-/* Sources/RemotioApp/SettingsViews.swift:1020 */
+/* Sources/RemotioApp/SettingsViews.swift:1039 */
 "保存" = "保存";
 
 /* Sources/RemotioApp/SettingsViews.swift:12 */
@@ -345,217 +354,217 @@
 /* Sources/RemotioApp/SettingsViews.swift:15 */
 "ログ" = "ログ";
 
-/* Sources/RemotioApp/SettingsViews.swift:255 */
+/* Sources/RemotioApp/SettingsViews.swift:262 */
 "リモコン %@" = "リモコン %@";
 
-/* Sources/RemotioApp/SettingsViews.swift:357 */
+/* Sources/RemotioApp/SettingsViews.swift:376 */
 "キーを入力…" = "キーを入力…";
 
-/* Sources/RemotioApp/SettingsViews.swift:359 */
+/* Sources/RemotioApp/SettingsViews.swift:378 */
 "%@ のキー入力を中止" = "%@ のキー入力を中止";
 
-/* Sources/RemotioApp/SettingsViews.swift:375 */
+/* Sources/RemotioApp/SettingsViews.swift:394 */
 "既定に戻す" = "既定に戻す";
 
-/* Sources/RemotioApp/SettingsViews.swift:383 */
+/* Sources/RemotioApp/SettingsViews.swift:402 */
 "音声入力" = "音声入力";
 
-/* Sources/RemotioApp/SettingsViews.swift:388 */
+/* Sources/RemotioApp/SettingsViews.swift:407 */
 "メディア操作" = "メディア操作";
 
-/* Sources/RemotioApp/SettingsViews.swift:393 */
+/* Sources/RemotioApp/SettingsViews.swift:412 */
 "システム操作" = "システム操作";
 
-/* Sources/RemotioApp/SettingsViews.swift:399 */
+/* Sources/RemotioApp/SettingsViews.swift:418 */
 "URL を開く…" = "URL を開く…";
 
-/* Sources/RemotioApp/SettingsViews.swift:400 */
+/* Sources/RemotioApp/SettingsViews.swift:419 */
 "シェルコマンドを実行…" = "シェルコマンドを実行…";
 
-/* Sources/RemotioApp/SettingsViews.swift:415 */
+/* Sources/RemotioApp/SettingsViews.swift:434 */
 "%@ の操作" = "%@ の操作";
 
-/* Sources/RemotioApp/SettingsViews.swift:432 */
+/* Sources/RemotioApp/SettingsViews.swift:451 */
 "既定" = "既定";
 
-/* Sources/RemotioApp/SettingsViews.swift:447 */
+/* Sources/RemotioApp/SettingsViews.swift:466 */
 "長押しと2回押し" = "長押しと2回押し";
 
-/* Sources/RemotioApp/SettingsViews.swift:448 */
+/* Sources/RemotioApp/SettingsViews.swift:467 */
 "%@ の長押しと2回押し" = "%@ の長押しと2回押し";
 
-/* Sources/RemotioApp/SettingsViews.swift:461 */
+/* Sources/RemotioApp/SettingsViews.swift:480 */
 "%@ の押し方" = "%@ の押し方";
 
-/* Sources/RemotioApp/SettingsViews.swift:464 */
+/* Sources/RemotioApp/SettingsViews.swift:483 */
 "長押し" = "長押し";
 
-/* Sources/RemotioApp/SettingsViews.swift:465 */
+/* Sources/RemotioApp/SettingsViews.swift:484 */
 "%@ の長押し" = "%@ の長押し";
 
-/* Sources/RemotioApp/SettingsViews.swift:468 */
+/* Sources/RemotioApp/SettingsViews.swift:487 */
 "送り方" = "送り方";
 
-/* Sources/RemotioApp/SettingsViews.swift:471 */
+/* Sources/RemotioApp/SettingsViews.swift:490 */
 "1回送る" = "1回送る";
 
-/* Sources/RemotioApp/SettingsViews.swift:472 */
+/* Sources/RemotioApp/SettingsViews.swift:491 */
 "押している間" = "押している間";
 
-/* Sources/RemotioApp/SettingsViews.swift:473 */
+/* Sources/RemotioApp/SettingsViews.swift:492 */
 "リピート" = "リピート";
 
-/* Sources/RemotioApp/SettingsViews.swift:481 */
+/* Sources/RemotioApp/SettingsViews.swift:500 */
 "2回押し" = "2回押し";
 
-/* Sources/RemotioApp/SettingsViews.swift:482 */
+/* Sources/RemotioApp/SettingsViews.swift:501 */
 "%@ の2回押し" = "%@ の2回押し";
 
-/* Sources/RemotioApp/SettingsViews.swift:485 */
+/* Sources/RemotioApp/SettingsViews.swift:504 */
 "長押しか2回押しを割り当てると、Mac の標準動作は止まり、タップの操作は Remotio から送ります。2回押しを割り当てると、タップは約0.3秒遅れます。" = "長押しか2回押しを割り当てると、Mac の標準動作は止まり、タップの操作は Remotio から送ります。2回押しを割り当てると、タップは約0.3秒遅れます。";
 
-/* Sources/RemotioApp/SettingsViews.swift:549 */
+/* Sources/RemotioApp/SettingsViews.swift:568 */
 "「%@」に割り当てるキーを押してください。修飾キーだけ(Fn、右 ⌥ など)も押して離すと設定できます。待ち受け中のキー入力は他のアプリへ送りません。" = "「%@」に割り当てるキーを押してください。修飾キーだけ(Fn、右 ⌥ など)も押して離すと設定できます。待ち受け中のキー入力は他のアプリへ送りません。";
 
-/* Sources/RemotioApp/SettingsViews.swift:552 */
+/* Sources/RemotioApp/SettingsViews.swift:571 */
 "「%@」が前面にあるときだけ使う割り当てです。「既定」の項目は既定の割り当てに従います。色の付いた項目はこのアプリだけの割り当てで、メニューの「既定に戻す」で戻せます。" = "「%@」が前面にあるときだけ使う割り当てです。「既定」の項目は既定の割り当てに従います。色の付いた項目はこのアプリだけの割り当てで、メニューの「既定に戻す」で戻せます。";
 
-/* Sources/RemotioApp/SettingsViews.swift:555 */
+/* Sources/RemotioApp/SettingsViews.swift:574 */
 "各ボタンのメニューから操作を選びます。「標準」は Mac の標準動作をそのまま通し、「無効」は何もしません。この画面を操作している間は、リモコンから割り当てたキーを送りません。" = "各ボタンのメニューから操作を選びます。「標準」は Mac の標準動作をそのまま通し、「無効」は何もしません。この画面を操作している間は、リモコンから割り当てたキーを送りません。";
 
-/* Sources/RemotioApp/SettingsViews.swift:559 */
+/* Sources/RemotioApp/SettingsViews.swift:578 */
 "キャンセル" = "キャンセル";
 
-/* Sources/RemotioApp/SettingsViews.swift:560 */
+/* Sources/RemotioApp/SettingsViews.swift:579 */
 "初期設定に戻す" = "初期設定に戻す";
 
-/* Sources/RemotioApp/SettingsViews.swift:560 */
+/* Sources/RemotioApp/SettingsViews.swift:579 */
 "すべて既定に戻す" = "すべて既定に戻す";
 
-/* Sources/RemotioApp/SettingsViews.swift:580 */
+/* Sources/RemotioApp/SettingsViews.swift:599 */
 "%@(未接続)" = "%@(未接続)";
 
-/* Sources/RemotioApp/SettingsViews.swift:586 */
+/* Sources/RemotioApp/SettingsViews.swift:605 */
 "「%@」の設定を削除" = "「%@」の設定を削除";
 
-/* Sources/RemotioApp/SettingsViews.swift:598 */
+/* Sources/RemotioApp/SettingsViews.swift:617 */
 "割り当てるリモコン" = "割り当てるリモコン";
 
-/* Sources/RemotioApp/SettingsViews.swift:599 */
+/* Sources/RemotioApp/SettingsViews.swift:618 */
 "リモコンのボタンを押しても切り替わります" = "リモコンのボタンを押しても切り替わります";
 
-/* Sources/RemotioApp/SettingsViews.swift:617 */
+/* Sources/RemotioApp/SettingsViews.swift:636 */
 "アプリを追加" = "アプリを追加";
 
-/* Sources/RemotioApp/SettingsViews.swift:622 */
+/* Sources/RemotioApp/SettingsViews.swift:641 */
 "その他のアプリ…" = "その他のアプリ…";
 
-/* Sources/RemotioApp/SettingsViews.swift:626 */
+/* Sources/RemotioApp/SettingsViews.swift:645 */
 "「%@」の割り当てを削除" = "「%@」の割り当てを削除";
 
-/* Sources/RemotioApp/SettingsViews.swift:642 */
+/* Sources/RemotioApp/SettingsViews.swift:661 */
 "割り当ての対象" = "割り当ての対象";
 
-/* Sources/RemotioApp/SettingsViews.swift:715 */
+/* Sources/RemotioApp/SettingsViews.swift:734 */
 "F キーとして割り当てるには、Fn も一緒に押してください" = "F キーとして割り当てるには、Fn も一緒に押してください";
 
-/* Sources/RemotioApp/SettingsViews.swift:723 */
+/* Sources/RemotioApp/SettingsViews.swift:742 */
 "このキーは割り当てできません" = "このキーは割り当てできません";
 
-/* Sources/RemotioApp/SettingsViews.swift:754 */
+/* Sources/RemotioApp/SettingsViews.swift:773 */
 "マイク入力" = "マイク入力";
 
-/* Sources/RemotioApp/SettingsViews.swift:756 */
+/* Sources/RemotioApp/SettingsViews.swift:775 */
 "ゲイン" = "ゲイン";
 
-/* Sources/RemotioApp/SettingsViews.swift:759 */
+/* Sources/RemotioApp/SettingsViews.swift:778 */
 "マイクのゲイン" = "マイクのゲイン";
 
-/* Sources/RemotioApp/SettingsViews.swift:763 */
+/* Sources/RemotioApp/SettingsViews.swift:782 */
 "リセット" = "リセット";
 
-/* Sources/RemotioApp/SettingsViews.swift:767 */
+/* Sources/RemotioApp/SettingsViews.swift:786 */
 "レベル" = "レベル";
 
-/* Sources/RemotioApp/SettingsViews.swift:770 */
+/* Sources/RemotioApp/SettingsViews.swift:789 */
 "入力レベル" = "入力レベル";
 
-/* Sources/RemotioApp/SettingsViews.swift:771 */
+/* Sources/RemotioApp/SettingsViews.swift:790 */
 "%lld%%" = "%lld%%";
 
-/* Sources/RemotioApp/SettingsViews.swift:773 */
+/* Sources/RemotioApp/SettingsViews.swift:792 */
 "音が割れています。ゲインを下げてください。" = "音が割れています。ゲインを下げてください。";
 
-/* Sources/RemotioApp/SettingsViews.swift:774 */
+/* Sources/RemotioApp/SettingsViews.swift:793 */
 "音声ボタンを押して普通に話し、音の山が線(-12 dB)に届くくらいが目安です。設定画面が前面の間は、割り当てたキーを送りません。" = "音声ボタンを押して普通に話し、音の山が線(-12 dB)に届くくらいが目安です。設定画面が前面の間は、割り当てたキーを送りません。";
 
-/* Sources/RemotioApp/SettingsViews.swift:826 */
+/* Sources/RemotioApp/SettingsViews.swift:845 */
 "マイク動作中" = "マイク動作中";
 
-/* Sources/RemotioApp/SettingsViews.swift:826 */
+/* Sources/RemotioApp/SettingsViews.swift:845 */
 "音声ボタンを押している間だけマイクが動きます" = "音声ボタンを押している間だけマイクが動きます";
 
-/* Sources/RemotioApp/SettingsViews.swift:840 */
+/* Sources/RemotioApp/SettingsViews.swift:859 */
 "仮想マイク" = "仮想マイク";
 
-/* Sources/RemotioApp/SettingsViews.swift:845 */
+/* Sources/RemotioApp/SettingsViews.swift:864 */
 "インストール" = "インストール";
 
-/* Sources/RemotioApp/SettingsViews.swift:847 */
+/* Sources/RemotioApp/SettingsViews.swift:866 */
 "再インストール" = "再インストール";
 
-/* Sources/RemotioApp/SettingsViews.swift:849 */
+/* Sources/RemotioApp/SettingsViews.swift:868 */
 "アンインストール" = "アンインストール";
 
-/* Sources/RemotioApp/SettingsViews.swift:858 */
+/* Sources/RemotioApp/SettingsViews.swift:877 */
 "他の出力デバイスを使う" = "他の出力デバイスを使う";
 
-/* Sources/RemotioApp/SettingsViews.swift:861 */
+/* Sources/RemotioApp/SettingsViews.swift:880 */
 "送り先" = "送り先";
 
-/* Sources/RemotioApp/SettingsViews.swift:862 */
+/* Sources/RemotioApp/SettingsViews.swift:881 */
 "なし" = "なし";
 
-/* Sources/RemotioApp/SettingsViews.swift:868 */
+/* Sources/RemotioApp/SettingsViews.swift:887 */
 "更新" = "更新";
 
-/* Sources/RemotioApp/SettingsViews.swift:870 */
+/* Sources/RemotioApp/SettingsViews.swift:889 */
 "BlackHole などを選ぶと、リモコンの音声をそのデバイスへ送ります。使うアプリの入力には同じデバイスを選びます。" = "BlackHole などを選ぶと、リモコンの音声をそのデバイスへ送ります。使うアプリの入力には同じデバイスを選びます。";
 
-/* Sources/RemotioApp/SettingsViews.swift:874 */
+/* Sources/RemotioApp/SettingsViews.swift:893 */
 "システムの既定の入出力デバイスは変更しません。" = "システムの既定の入出力デバイスは変更しません。";
 
-/* Sources/RemotioApp/SettingsViews.swift:880 */
+/* Sources/RemotioApp/SettingsViews.swift:899 */
 "ログイン時に起動" = "ログイン時に起動";
 
-/* Sources/RemotioApp/SettingsViews.swift:896 */
+/* Sources/RemotioApp/SettingsViews.swift:915 */
 "使用できます。音声入力を使うアプリの入力に「Remotio Microphone」を選んでください。" = "使用できます。音声入力を使うアプリの入力に「Remotio Microphone」を選んでください。";
 
-/* Sources/RemotioApp/SettingsViews.swift:899 */
+/* Sources/RemotioApp/SettingsViews.swift:918 */
 "新しいバージョンへの更新が必要です。再インストールしてください。解決しない場合は Mac を再起動してください。" = "新しいバージョンへの更新が必要です。再インストールしてください。解決しない場合は Mac を再起動してください。";
 
-/* Sources/RemotioApp/SettingsViews.swift:901 */
+/* Sources/RemotioApp/SettingsViews.swift:920 */
 "他のアプリのマイクとして使うために必要です。管理者パスワードの入力が必要で、処理の間は Mac の音声が一瞬止まります。" = "他のアプリのマイクとして使うために必要です。管理者パスワードの入力が必要で、処理の間は Mac の音声が一瞬止まります。";
 
-/* Sources/RemotioApp/SettingsViews.swift:913 */
+/* Sources/RemotioApp/SettingsViews.swift:932 */
 "入力監視" = "入力監視";
 
-/* Sources/RemotioApp/SettingsViews.swift:913 */
+/* Sources/RemotioApp/SettingsViews.swift:932 */
 "リモコンのボタンと音声を受け取るために必要です。変更後はアプリを開き直してください。" = "リモコンのボタンと音声を受け取るために必要です。変更後はアプリを開き直してください。";
 
-/* Sources/RemotioApp/SettingsViews.swift:915 */
+/* Sources/RemotioApp/SettingsViews.swift:934 */
 "アクセシビリティ" = "アクセシビリティ";
 
-/* Sources/RemotioApp/SettingsViews.swift:915 */
+/* Sources/RemotioApp/SettingsViews.swift:934 */
 "割り当てたキーを送信するために必要です。" = "割り当てたキーを送信するために必要です。";
 
-/* Sources/RemotioApp/SettingsViews.swift:932 */
+/* Sources/RemotioApp/SettingsViews.swift:951 */
 "許可済み" = "許可済み";
 
-/* Sources/RemotioApp/SettingsViews.swift:934 */
+/* Sources/RemotioApp/SettingsViews.swift:953 */
 "許可を求める" = "許可を求める";
 
-/* Sources/RemotioApp/SettingsViews.swift:951 */
+/* Sources/RemotioApp/SettingsViews.swift:970 */
 "まだログはありません。" = "まだログはありません。";
 
 /* Sources/RemotioApp/SetupView.swift:137 */

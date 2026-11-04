@@ -23,6 +23,11 @@ public final class PCMOutput {
     private var deviceID: AudioDeviceID
     private var configObserver: NSObjectProtocol?
     private var wantsRunning = false
+    /// 再生待ちのバッファ数。再生側のスレッドからも減らすため lock で守る
+    private var pending = 0
+    private let pendingLock = NSLock()
+    /// 発話中に再生待ちが空になり、音が途切れた回数
+    public private(set) var underruns = 0
 
     /// 状態の変化をログへ伝える
     public var onLog: ((String) -> Void)?
@@ -97,6 +102,8 @@ public final class PCMOutput {
         player.stop()
         waiting.removeAll()
         playing = false
+        underruns = 0
+        pendingLock.withLock { pending = 0 }
     }
 
     /// 発話の終了時に呼ぶ。プリバッファに満たない短い発話も出力する。
@@ -114,7 +121,8 @@ public final class PCMOutput {
         for (i, s) in samples.enumerated() { out[i] = Float(s) / 32768 }
 
         if playing {
-            player.scheduleBuffer(buffer, completionHandler: nil)
+            if pendingLock.withLock({ pending }) == 0 { underruns += 1 }
+            schedule(buffer)
         } else {
             waiting.append(buffer)
             if waiting.count >= prebufferPackets { flushWaiting() }
@@ -128,9 +136,17 @@ public final class PCMOutput {
             waiting.removeAll()
             return
         }
-        waiting.forEach { player.scheduleBuffer($0, completionHandler: nil) }
+        waiting.forEach(schedule)
         waiting.removeAll()
         player.play()
         playing = true
+    }
+
+    private func schedule(_ buffer: AVAudioPCMBuffer) {
+        pendingLock.withLock { pending += 1 }
+        player.scheduleBuffer(buffer) { [weak self] in
+            guard let self else { return }
+            pendingLock.withLock { self.pending = max(0, self.pending - 1) }
+        }
     }
 }

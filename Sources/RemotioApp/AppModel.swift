@@ -70,6 +70,8 @@ final class AppModel: ObservableObject {
     private let profile = FireTVRemoteProfile()
     private var session: VoiceSession?
     private var output: PCMOutput?
+    /// 今の発話で、ゲインの適用後に音割れしたパケット数
+    private var clippedPackets = 0
     /// つながっているリモコンごとの割り当ての処理
     private var live: [UInt64: LiveRemote] = [:]
     /// 新しいリモコンに最初に使う割り当て(リモコンごとに分ける前の設定ファイル)
@@ -126,16 +128,31 @@ final class AppModel: ObservableObject {
         do {
             let session = try VoiceSession(profile: profile)
             session.onLog = { [weak self] in self?.log($0) }
+            // 診断用: defaults write online.todayporton.remotio SaveVoiceCaptures -bool true
+            if UserDefaults.standard.bool(forKey: "SaveVoiceCaptures") {
+                session.captureDirectory = supportDirectory.appendingPathComponent("Captures", isDirectory: true)
+            }
             session.onPCM = { [weak self] samples in
                 guard let self else { return }
                 let result = AudioGain.apply(samples, decibels: self.micGainDecibels)
                 self.micMeter.update(peak: result.peak, clipped: result.clipped)
+                if result.clipped { self.clippedPackets += 1 }
                 self.output?.enqueue(result.samples)
             }
             session.onMicChange = { [weak self] enabled in
                 self?.micOn = enabled
                 self?.micMeter.setActive(enabled)
-                if enabled { self?.output?.beginSession() } else { self?.output?.endSession() }
+                if enabled {
+                    self?.clippedPackets = 0
+                    self?.output?.beginSession()
+                } else {
+                    self?.output?.endSession()
+                    DispatchQueue.main.asyncAfter(deadline: .now() + 0.4) { [weak self] in
+                        guard let self, !micOn else { return }
+                        let underruns = output.map { String($0.underruns) } ?? "-"
+                        log(String(localized: "音声の出力: 音割れ \(clippedPackets) パケット、再生の途切れ \(underruns) 回"))
+                    }
+                }
             }
             session.onButton = { [weak self] event, remoteID in self?.handle(event, from: remoteID) }
             // 切断したリモコンの押されたままのボタンは、VoiceSession が先に解放を送っている
