@@ -1,6 +1,10 @@
+<p align="center"><img src="Assets/AppIcon.svg" width="128" height="128" alt="Remotio icon"></p>
+
 # Remotio
 
 **English** | [日本語](README.ja.md)
+
+**Website:** https://todayporton.github.io/remotio/
 
 Use Bluetooth remotes as input devices on your Mac.
 
