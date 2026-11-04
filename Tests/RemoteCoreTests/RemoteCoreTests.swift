@@ -179,6 +179,20 @@ final class RemoteCoreTests: XCTestCase {
         XCTAssertNil(KeyMap.defaultBindings["play_pause"])
     }
 
+    func testShorterIntervalBetweenModifiers() throws {
+        // Hyper + a: 修飾キー同士は 20ms、修飾キーと a の間は 40ms
+        let combo = try KeyCombo("cmd+ctrl+opt+shift+a")
+        let down = KeyAction(combo: combo, isDown: true).events
+        XCTAssertEqual(zip(down, down.dropFirst()).map { KeyInjector.interval(after: $0, before: $1) },
+                       [20_000, 20_000, 20_000, 40_000])
+        let up = KeyAction(combo: combo, isDown: false).events
+        XCTAssertEqual(zip(up, up.dropFirst()).map { KeyInjector.interval(after: $0, before: $1) },
+                       [40_000, 20_000, 20_000, 20_000])
+        // 修飾キーの2回押しは 40ms のまま
+        let tap = KeyAction(combo: try KeyCombo("dictation:fn"), isDown: true).events
+        XCTAssertTrue(zip(tap, tap.dropFirst()).allSatisfy { KeyInjector.interval(after: $0, before: $1) == 40_000 })
+    }
+
     func testInjectedEventOrder() throws {
         // 修飾キーのフラグには、実際のキーボードと同じく左右を示すフラグも付く
         let ctrl = CGEventFlags.maskControl.rawValue | 0x1

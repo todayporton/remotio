@@ -525,6 +525,15 @@ public enum KeyInjector {
     /// 届き、状態を確認し直すアプリ(Amical など)で修飾キーが押されていないと判定されることがある。
     private static let eventInterval: useconds_t = 40_000
 
+    /// 修飾キー同士の間隔。続けて送ると Amical が反応しないため空けるが、Hyper などで遅れが積み重ならないよう短くする。
+    private static let modifierInterval: useconds_t = 20_000
+
+    /// 前後のイベントの間に待つ時間。別々の修飾キーの間だけ短くする。
+    static func interval(after previous: InjectedKeyEvent, before next: InjectedKeyEvent) -> useconds_t {
+        previous.kind == .flagsChanged && next.kind == .flagsChanged && previous.keyCode != next.keyCode
+            ? modifierInterval : eventInterval
+    }
+
     private static let queue = DispatchQueue(label: "remotio.key-injector", qos: .userInteractive)
 
     /// キューに積んで順に送る。呼び出し元(main スレッド)を待たせない。
@@ -536,7 +545,7 @@ public enum KeyInjector {
         queue.async {
             if let mediaKey { postMediaKey(mediaKey, isDown: isDown, isRepeat: isRepeat) }
             for (index, item) in events.enumerated() {
-                if index > 0 { usleep(eventInterval) }
+                if index > 0 { usleep(interval(after: events[index - 1], before: item)) }
                 guard let event = CGEvent(keyboardEventSource: source, virtualKey: item.keyCode,
                                           keyDown: item.kind == .keyDown) else { continue }
                 if item.kind == .flagsChanged { event.type = .flagsChanged }
