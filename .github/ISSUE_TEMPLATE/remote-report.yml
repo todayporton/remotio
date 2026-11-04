@@ -1,0 +1,75 @@
+name: Remote compatibility report / 動作報告
+description: Tell us how Remotio works with your remote. / お使いのリモコンでの動作を教えてください。
+title: "[Remote] "
+labels: ["compatibility"]
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Thanks for trying Remotio! Reports for any remote are welcome, whether it works or not.
+        Remotio を試していただきありがとうございます。動いた場合も動かなかった場合も歓迎します。
+  - type: input
+    id: model
+    attributes:
+      label: Remote model / リモコンの機種
+      description: The product name, or what came in the box. / 製品名、または何に付属していたか。
+      placeholder: e.g. Alexa Voice Remote Pro, Fire TV Stick 4K remote
+    validations:
+      required: true
+  - type: dropdown
+    id: origin
+    attributes:
+      label: Genuine or compatible? / 純正品か互換品か
+      options:
+        - Genuine Amazon remote / Amazon の純正品
+        - Compatible (third-party) remote / 互換品(Amazon 以外の製品)
+        - Not sure / わからない
+    validations:
+      required: true
+  - type: input
+    id: bluetooth-name
+    attributes:
+      label: Name shown in Bluetooth settings / Bluetooth 設定に表示される名前
+      placeholder: e.g. Amazon Remote
+  - type: dropdown
+    id: buttons
+    attributes:
+      label: Buttons / ボタン
+      options:
+        - All buttons work / すべて動く
+        - Some buttons work / 一部だけ動く
+        - Not working / 動かない
+        - Not tried / 試していない
+    validations:
+      required: true
+  - type: dropdown
+    id: microphone
+    attributes:
+      label: Microphone / マイク
+      options:
+        - Works well / 問題なく使える
+        - Works, but the audio is choppy or noisy / 使えるが、音が途切れる・雑音がある
+        - No audio / 音が届かない
+        - Not tried / 試していない
+    validations:
+      required: true
+  - type: textarea
+    id: details
+    attributes:
+      label: Details / 詳しい状況
+      description: |
+        Which buttons didn't work, how the audio sounded, and so on. Lines from Logs in the settings window help a lot, such as "Input from an unsupported button" or "Audio received".
+        動かなかったボタンや音の様子など。設定画面の「ログ」の「未対応のボタンの入力」や「音声の受信」の行があると、とても助かります。
+      render: text
+  - type: input
+    id: macos
+    attributes:
+      label: macOS version / macOS のバージョン
+      placeholder: e.g. macOS 26.2
+    validations:
+      required: true
+  - type: input
+    id: version
+    attributes:
+      label: Remotio version / Remotio のバージョン
+      placeholder: e.g. 0.1.0-alpha.1

@@ -1,0 +1,99 @@
+<!doctype html>
+<html lang="ja">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="color-scheme" content="dark">
+<meta name="theme-color" content="#162527">
+<title>Remotio — Fire TV のリモコンを、Mac の音声入力コントローラーに</title>
+<meta name="description" content="Remotio は、Fire TV の Alexa 音声認識リモコンを、Mac の Push-to-Talk マイクと自由に割り当てられるコントローラーにする、無料でオープンソースのメニューバーアプリです。">
+<link rel="icon" href="../assets/icon.svg" type="image/svg+xml">
+<link rel="alternate" hreflang="en" href="https://todayporton.github.io/remotio/">
+<link rel="alternate" hreflang="ja" href="https://todayporton.github.io/remotio/ja/">
+<link rel="stylesheet" href="../assets/style.css">
+</head>
+<body>
+<div class="wrap">
+  <header class="top">
+    <a class="brand" href="./"><img src="../assets/icon.svg" alt="">Remotio</a>
+    <nav class="lang"><a href="../" hreflang="en" lang="en">English</a> · <strong>日本語</strong></nav>
+  </header>
+
+  <div class="hero">
+    <img class="icon" src="../assets/icon.svg" alt="Remotio のアイコン">
+    <h1><span class="fire">Fire TV</span> のリモコンを、<br>Mac の<span class="voice">音声入力コントローラー</span>に</h1>
+    <p class="lead">Remotio は、Alexa 音声認識リモコンを Mac の Push-to-Talk マイクと、自由に割り当てられるコントローラーにするアプリです。音声ボタンを押しながら話して音声入力し、ほかのボタンには好きな操作を割り当てられます。</p>
+    <div class="actions">
+      <a class="button primary" href="https://github.com/todayporton/remotio/releases">ダウンロード</a>
+      <a class="button" href="https://github.com/todayporton/remotio/blob/main/README.ja.md">GitHub で見る</a>
+    </div>
+    <p class="meta">無料・オープンソース · macOS 13 以降 · Apple Silicon · アルファ版</p>
+  </div>
+
+  <figure class="shot">
+    <img src="../assets/buttons-ja.png" width="1400" height="1046" alt="Remotio の「ボタン」設定。リモコン図と、ボタンごとの操作のメニュー">
+    <figcaption>リモコン図を見ながら、ボタンごとに操作を割り当てます。</figcaption>
+  </figure>
+
+  <section>
+    <h2>できること</h2>
+    <div class="features">
+      <div class="card">
+        <h3>Push-to-Talk のマイク</h3>
+        <p>音声ボタンを押しながら話すと、音声が仮想マイク「Remotio Microphone」に届きます。どのアプリでも入力として選べます。</p>
+      </div>
+      <div class="card">
+        <h3>音声入力と連携</h3>
+        <p>音声入力アプリの Push-to-Talk のキーを音声ボタンに割り当てたり、押している間だけ macOS の音声入力を使ったりできます。</p>
+      </div>
+      <div class="card">
+        <h3>どのボタンにも好きな操作</h3>
+        <p>キーやショートカット、メディアキー、システム操作を送れます。URL(Raycast の URL など)を開いたり、シェルコマンドを実行したりもできます。</p>
+      </div>
+      <div class="card">
+        <h3>長押しと2回押し</h3>
+        <p>1つのボタンに、押す・長押し・2回押しの3つの操作を割り当てられます。</p>
+      </div>
+      <div class="card">
+        <h3>アプリごとの割り当て</h3>
+        <p>特定のアプリが前面にあるときだけ使う割り当てを作れます。変えていない項目は既定の割り当てに従います。</p>
+      </div>
+      <div class="card">
+        <h3>複数のリモコン</h3>
+        <p>複数のリモコンを同時に接続できます。割り当てはリモコンごとに保存されます。</p>
+      </div>
+    </div>
+  </section>
+
+  <section>
+    <h2>対応リモコン</h2>
+    <div class="table-scroll">
+      <table>
+        <thead><tr><th>リモコン</th><th>ボタン</th><th>マイク</th></tr></thead>
+        <tbody>
+          <tr><td>Alexa 音声認識リモコン(Fire TV Stick 4K 付属)</td><td>対応</td><td>対応</td></tr>
+          <tr><td>Alexa 対応音声認識リモコン Pro</td><td>対応</td><td>対応</td></tr>
+        </tbody>
+      </table>
+    </div>
+    <p class="small">Remote Pro の互換品(Amazon 以外の製品)では、マイクがうまく使えない場合があります。<br>ほかのリモコンで試した方は、<a href="https://github.com/todayporton/remotio/issues/new?template=remote-report.yml">Issues</a> で動作を報告していただけると助かります。</p>
+  </section>
+
+  <section>
+    <h2>はじめかた</h2>
+    <ol class="steps">
+      <li><a href="https://github.com/todayporton/remotio/releases">Releases</a> から <code>Remotio.dmg</code> をダウンロードし、Remotio を「アプリケーション」フォルダへ入れます。</li>
+      <li>アプリを開きます。Apple の公証を受けていないので、最初はブロックされます。システム設定 › プライバシーとセキュリティ の「このまま開く」で許可します。</li>
+      <li>セットアップの案内に沿って、権限の許可、Bluetooth でのリモコンのペアリング、仮想マイクのインストールを行います。</li>
+      <li>音声入力を使うアプリで入力に「Remotio Microphone」を選び、設定画面でボタンにキーを割り当てます。</li>
+    </ol>
+    <p class="note">アルファ版です。動作確認は限られた環境でしか行っていません。設定の形式や動作は今後変わる場合があります。詳しい使い方と既知の制限は <a href="https://github.com/todayporton/remotio/blob/main/README.ja.md">README</a> を参照してください。</p>
+  </section>
+
+  <footer>
+    <p>Remotio は非公式のプロジェクトで、Amazon とは関係ありません。Fire TV、Alexa は Amazon.com, Inc. またはその関連会社の商標です。</p>
+    <p>MIT ライセンス · <a href="https://github.com/todayporton/remotio">GitHub</a></p>
+  </footer>
+</div>
+</body>
+</html>

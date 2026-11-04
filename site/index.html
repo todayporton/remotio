@@ -1,0 +1,99 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="color-scheme" content="dark">
+<meta name="theme-color" content="#162527">
+<title>Remotio — Turn your Fire TV remote into a voice input controller for your Mac</title>
+<meta name="description" content="Remotio is a free, open-source macOS menu bar app that turns the Fire TV Alexa Voice Remote into a push-to-talk microphone and a programmable controller for your Mac.">
+<link rel="icon" href="assets/icon.svg" type="image/svg+xml">
+<link rel="alternate" hreflang="en" href="https://todayporton.github.io/remotio/">
+<link rel="alternate" hreflang="ja" href="https://todayporton.github.io/remotio/ja/">
+<link rel="stylesheet" href="assets/style.css">
+</head>
+<body>
+<div class="wrap">
+  <header class="top">
+    <a class="brand" href="./"><img src="assets/icon.svg" alt="">Remotio</a>
+    <nav class="lang"><strong>English</strong> · <a href="ja/" hreflang="ja" lang="ja">日本語</a></nav>
+  </header>
+
+  <div class="hero">
+    <img class="icon" src="assets/icon.svg" alt="Remotio icon">
+    <h1>Turn your <span class="fire">Fire TV</span> remote <br>into a <span class="voice">voice input controller</span> for your Mac</h1>
+    <p class="lead">Remotio turns the Alexa Voice Remote into a push-to-talk microphone and a programmable controller for your Mac. Hold the voice button to dictate, and make every other button do what you want.</p>
+    <div class="actions">
+      <a class="button primary" href="https://github.com/todayporton/remotio/releases">Download</a>
+      <a class="button" href="https://github.com/todayporton/remotio">View on GitHub</a>
+    </div>
+    <p class="meta">Free and open source · macOS 13 or later · Apple silicon · Alpha</p>
+  </div>
+
+  <figure class="shot">
+    <img src="assets/buttons-en.png" width="1400" height="1046" alt="Remotio's Buttons settings, with a drawing of the remote and an action menu for each button">
+    <figcaption>Assign an action to each button on a drawing of your remote.</figcaption>
+  </figure>
+
+  <section>
+    <h2>What it does</h2>
+    <div class="features">
+      <div class="card">
+        <h3>Push-to-talk microphone</h3>
+        <p>Hold the voice button and speak. The audio goes to the virtual microphone “Remotio Microphone”, which any app can use as its input.</p>
+      </div>
+      <div class="card">
+        <h3>Works with dictation</h3>
+        <p>Assign a dictation app’s push-to-talk key to the voice button, or start macOS Dictation while you hold it.</p>
+      </div>
+      <div class="card">
+        <h3>Any button, any action</h3>
+        <p>Send a key or shortcut, a media key, or a system action. A button can also open a URL, such as a Raycast link, or run a shell command.</p>
+      </div>
+      <div class="card">
+        <h3>Long press and double press</h3>
+        <p>Give each button up to three actions: press, long press, and double press.</p>
+      </div>
+      <div class="card">
+        <h3>Per-app assignments</h3>
+        <p>Use different assignments while a specific app is in front. Anything you don’t change follows the global assignments.</p>
+      </div>
+      <div class="card">
+        <h3>Several remotes</h3>
+        <p>Connect more than one remote at a time. Each remote keeps its own assignments.</p>
+      </div>
+    </div>
+  </section>
+
+  <section>
+    <h2>Supported remotes</h2>
+    <div class="table-scroll">
+      <table>
+        <thead><tr><th>Remote</th><th>Buttons</th><th>Microphone</th></tr></thead>
+        <tbody>
+          <tr><td>Alexa Voice Remote (comes with the Fire TV Stick 4K)</td><td>Yes</td><td>Yes</td></tr>
+          <tr><td>Alexa Voice Remote Pro</td><td>Yes</td><td>Yes</td></tr>
+        </tbody>
+      </table>
+    </div>
+    <p class="small">With some compatible (non-Amazon) Remote Pro models, the microphone may not work well.<br>If you’ve tried Remotio with another remote, please share how it went in <a href="https://github.com/todayporton/remotio/issues/new?template=remote-report.yml">Issues</a>.</p>
+  </section>
+
+  <section>
+    <h2>Get started</h2>
+    <ol class="steps">
+      <li>Download <code>Remotio.dmg</code> from <a href="https://github.com/todayporton/remotio/releases">Releases</a> and move Remotio to the Applications folder.</li>
+      <li>Open it. Remotio isn’t notarized by Apple, so macOS blocks it the first time. Allow it with Open Anyway in System Settings › Privacy &amp; Security.</li>
+      <li>Follow the setup guide: allow the permissions, pair the remote in Bluetooth settings, and install the virtual microphone.</li>
+      <li>Choose “Remotio Microphone” as the input in the app you dictate into, then assign keys to the buttons in Settings.</li>
+    </ol>
+    <p class="note">This is an alpha release, tested in a limited set of environments. Settings and behavior may change. See the <a href="https://github.com/todayporton/remotio#readme">README</a> for details and known limitations.</p>
+  </section>
+
+  <footer>
+    <p>Remotio is an unofficial project and is not affiliated with Amazon. Fire TV and Alexa are trademarks of Amazon.com, Inc. or its affiliates.</p>
+    <p>MIT License · <a href="https://github.com/todayporton/remotio">GitHub</a></p>
+  </footer>
+</div>
+</body>
+</html>
